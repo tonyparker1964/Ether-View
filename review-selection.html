@@ -2587,7 +2587,7 @@ function renderResults(){
   const q=qEl.value.trim().toLowerCase().replace(/\s*\((?:star|planet)\)\s*$/,'');
   const terms=q.split(/\s+/).filter(Boolean);
   const rank=it=>{ const name=it.name.toLowerCase(); return name===q?0:name.startsWith(q)?1:name.includes(q)?2:3; };
-  shown = SEARCH.filter(it => { if (!q || it.name.toLowerCase().includes(q)) return true; const words=it.hay.split(/[\s·,()*’'-]+/); return terms.every(t => words.some(w => w.startsWith(t))); }).sort((a,b)=>rank(a)-rank(b));
+  shown = SEARCH.filter(it => { if (!q || it.name.toLowerCase().includes(q) || it.name.toLowerCase().replace(/[-\s]/g,'').includes(q.replace(/[-\s]/g,''))) return true; const words=it.hay.split(/[\s·,()*’'-]+/); return terms.every(t => words.some(w => w.startsWith(t))); }).sort((a,b)=>rank(a)-rank(b));
   let html='', idx=0, lastKind='';
   for (const it of shown){
     if (it.grp!==lastKind){ html += `<li class="grp" role="presentation">${GRP_NAME[it.grp]}</li>`; lastKind=it.grp; }
