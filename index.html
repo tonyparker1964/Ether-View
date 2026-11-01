@@ -1026,6 +1026,35 @@ function ensureBodyMap(key){
   });
   return art.pending;
 }
+// Self-luminous photospheres: external lights must not shade a star like a planet.
+function stellarMaterial(map=null,color=0xffffff){
+  const material=new THREE.MeshBasicMaterial({map,color});
+  material.onBeforeCompile=shader=>{
+    const varying='\nvarying vec3 vPhotosphereNormal; varying vec3 vPhotosphereView;\n';
+    shader.vertexShader=shader.vertexShader.replace('#include <common>','#include <common>'+varying)
+      .replace('#include <project_vertex>','#include <project_vertex>\nvPhotosphereNormal=normalMatrix*normal; vPhotosphereView=-mvPosition.xyz;');
+    shader.fragmentShader=shader.fragmentShader.replace('#include <common>','#include <common>'+varying)
+      .replace('#include <tonemapping_fragment>','float mu=max(0.0,dot(normalize(vPhotosphereNormal),normalize(vPhotosphereView)));\ngl_FragColor.rgb *= 0.35+0.65*mu;\n#include <tonemapping_fragment>');
+  };
+  material.customProgramCacheKey=()=> 'stellar-limb-v1';
+  return material;
+}
+function binaryEllipse(binary,E){
+  const e=binary.e||0;
+  return {x:Math.cos(E)-e,y:Math.sqrt(1-e*e)*Math.sin(E)};
+}
+function binaryPhase(binary,days){
+  const M=2*Math.PI*(((days/binary.P)%1+1)%1);
+  return binaryEllipse(binary,keplerE(M,binary.e||0));
+}
+function binaryOrbitGeometry(binary,sign){
+  const points=[];
+  for(let i=0;i<=256;i++){
+    const p=binaryEllipse(binary,i/256*2*Math.PI);points.push(sign*p.x,sign*p.y,0);
+  }
+  const geometry=new THREE.BufferGeometry();geometry.setAttribute('position',new THREE.Float32BufferAttribute(points,3));return geometry;
+}
+
 async function bodyPortrait(key){
   if(bodyPortraitCache.has(key)) return bodyPortraitCache.get(key);
   const art=BODY_ART[key], texture=await ensureBodyMap(key);
@@ -1043,7 +1072,7 @@ async function bodyPortrait(key){
   const geometry=bodyArtGeometry(key,192,96);
   // A separate GPU texture is released after the snapshot; keep the explorer's map intact.
   const portraitTexture=texture.clone();portraitTexture.needsUpdate=true;
-  const material=new THREE.MeshStandardMaterial({map:portraitTexture,roughness:.93,metalness:0});
+  const material=art.star?stellarMaterial(portraitTexture):new THREE.MeshStandardMaterial({map:portraitTexture,roughness:.93,metalness:0});
   const globe=new THREE.Mesh(geometry,material);globe.rotation.y=-Math.PI/2;
   if(art.shape) globe.scale.fromArray(art.shape);
   world.add(globe); portraitRenderer.render(world,camera);
@@ -1602,7 +1631,7 @@ const EXO = [
     stars:[{ R:1.15, M:1.1, col:0xfff1d6 }], planets:[
     ['51pegb','51 Pegasi b',0.0527,4.231,12.0,0xc98a55,'The first planet found orbiting a Sun-like star (1995): a “hot Jupiter” that circles its star every 4.2 days. Its size is estimated.']] },
   { key:'kepler16', name:'Kepler-16', ra:289.076, dec:51.757, ly:245, double:true, type:'Double sun · orange and red dwarfs', starsTxt:'Two: an orange dwarf and a red dwarf, circling each other every 41 days',
-    binary:{ P:41.08, a:0.2243 }, stars:[{ R:0.649, M:0.69, col:0xffc58a },{ R:0.226, M:0.20, col:0xff8a5a }], alias:'tatooine', planets:[
+    binary:{ P:41.08, a:0.22431, e:0.15944 }, stars:[{ key:'kepler16a', name:'Kepler-16 A', R:0.6489, M:0.6897, T:4450, col:0xffc58a },{ key:'kepler16b', name:'Kepler-16 B', R:0.22623, M:0.20255, T:3311, col:0xff8a5a }], alias:'tatooine', planets:[
     ['k16b','Kepler-16b',0.7048,228.8,8.45,0xc8a27a,'The first planet confirmed to orbit two suns (2011), nicknamed “Tatooine.” A cold, Saturn-mass world.']] },
   { key:'kepler34', name:'Kepler-34', ra:296.436, dec:44.642, ly:4900, double:true, type:'Double sun · two Sun-like stars', starsTxt:'Two Sun-like stars, circling each other every 28 days',
     binary:{ P:27.8, a:0.228 }, stars:[{ R:1.16, M:1.05, col:0xfff1d6 },{ R:1.09, M:1.02, col:0xfff4e2 }], planets:[
@@ -1627,13 +1656,16 @@ EXO.forEach((sys,si) => {
   sys.pole = sys.dir.clone().cross(Math.abs(sys.dir.z)<0.9?Z:X).normalize();  // orbits seen nearly edge-on from Earth, as transiting planets are
   sys.e1 = sys.dir.clone(); sys.e2 = sys.pole.clone().cross(sys.e1);
   const Mt = sys.stars.reduce((t,x)=>t+x.M,0);
+  sys.stars.forEach(st=>{st.luminosity=st.T?st.R*st.R*Math.pow(st.T/5772,4):1;});
+  const totalLight=sys.stars.reduce((n,st)=>n+st.luminosity,0),maxLight=Math.max(...sys.stars.map(st=>st.luminosity));
   sys.stars.forEach((st,i) => {
     st.Rm = st.R*R_SUN; st.P = sys.P.clone();
     st.r = sys.binary ? sys.binary.a*AU*(Mt-st.M)/Mt : 0;  // distance from the shared center of mass
-    st.mesh = new THREE.Mesh(new THREE.SphereGeometry(1,48,24), new THREE.MeshBasicMaterial({ color:st.col })); scene.add(st.mesh);
-    st.glow = new THREE.Sprite(new THREE.SpriteMaterial({ map:tex(glowC), color:st.col, blending:THREE.AdditiveBlending, transparent:true, depthWrite:false })); scene.add(st.glow);
-    st.light = new THREE.PointLight(st.col, sys.stars.length>1 ? 1.1 : 1.6, 1, 0.0001); scene.add(st.light);
-    if (st.r>0){ st.orbit = new THREE.Line(unitCircle, new THREE.LineBasicMaterial({ color:0xffd9a0, transparent:true, opacity:0.35, depthWrite:false })); st.orbit.frustumCulled=false; scene.add(st.orbit); }
+    st.mesh = new THREE.Mesh(new THREE.SphereGeometry(1,48,24), st.key?stellarMaterial(null,st.col):new THREE.MeshBasicMaterial({ color:st.col })); scene.add(st.mesh);
+    if(st.key){const art=registerBodyArt('x:'+st.key,st.mesh);art.star=true;art.credit='AI-generated stellar illustration · 4K self-luminous 3-D render (3840 × 2160); source texture 1774 × 887 · starspot patterns are illustrative';}
+    st.glow = new THREE.Sprite(new THREE.SpriteMaterial({ map:tex(glowC), color:st.col, opacity:Math.sqrt(st.luminosity/maxLight), blending:THREE.AdditiveBlending, transparent:true, depthWrite:false })); scene.add(st.glow);
+    st.light = new THREE.PointLight(st.col, st.key ? 2.2*st.luminosity/totalLight : sys.stars.length>1 ? 1.1 : 1.6, 1, 0.0001); scene.add(st.light);
+    if (st.r>0){ st.orbit = new THREE.Line(sys.binary.e?binaryOrbitGeometry(sys.binary,i?1:-1):unitCircle, new THREE.LineBasicMaterial({ color:0xffd9a0, transparent:true, opacity:0.35, depthWrite:false })); st.orbit.frustumCulled=false; scene.add(st.orbit); }
   });
   sys.aMax = Math.max(sys.binary ? sys.binary.a*1.5 : 0, ...sys.planets.map(p=>p[2]))*AU;
   sys.planets = sys.planets.map((pl,pi) => { const o={ key:pl[0], name:pl[1], a:pl[2]*AU, per:pl[3], R:pl[4]*R_EARTH, P:V(), phase:hash(si,pi,9,2), note:pl[6] };
@@ -1648,7 +1680,7 @@ function updateMoonsExo(ms){
   const days = ms/86400000 + orbitDemoDays;
   for (const m of MOONS){ const th=2*Math.PI*(days/m[5] + m.phase); m.P.copy(eph.p[m[0]]).addScaledVector(m.e1, m.a*Math.cos(th)).addScaledVector(m.e2, m.a*Math.sin(th)); m.th=th; }
   for (const sys of EXO){
-    if (sys.binary){ const ph=2*Math.PI*(days/sys.binary.P), c=Math.cos(ph), sn=Math.sin(ph);
+    if (sys.binary){ const phase=binaryPhase(sys.binary,days), c=phase.x, sn=phase.y;
       sys.stars.forEach((st,i) => { const sg=i?1:-1; st.P.copy(sys.P).addScaledVector(sys.e1, sg*st.r*c).addScaledVector(sys.e2, sg*st.r*sn); }); }
     for (const o of sys.planets){ const th=2*Math.PI*(days/o.per + o.phase); o.P.copy(sys.P).addScaledVector(sys.e1, o.a*Math.cos(th)).addScaledVector(sys.e2, o.a*Math.sin(th)); o.th=th; }
   }
@@ -1931,11 +1963,19 @@ EXO.forEach(sys => {
     facts:[['Star'+(sys.double?'s':''),sys.name+(sys.double?' A and B':'')],['Distance from Earth',`About ${sys.ly.toLocaleString('en-US')} ly`],['Orbit',o.per+' days'],['Distance from '+(sys.double?'the stars':'its star'),(o.a/AU).toFixed(3)+' AU'],['Size',`About ${(o.R/R_EARTH).toFixed(1)} × Earth`]],
     note: o.note==='hz' ? 'One of seven Earth-sized planets packed closer to their star than Mercury is to the Sun, and one of three in its habitable zone.' : o.note==='t1' ? 'One of seven Earth-sized planets packed closer to their star than Mercury is to the Sun.' : (o.note || 'One of the planets found by NASA’s Kepler telescope as it crossed in front of its star.') }; });
 });
+// Individual Kepler-16 suns can be searched, selected, and inspected.
+EXO.forEach(sys=>sys.stars.filter(st=>st.key).forEach((st,i)=>{
+  BODY['x:'+st.key]={name:st.name,ref:st.name,R:st.Rm,P:st.P,dir:sys.dir,group:'exo',far:true,con:'Cygnus',tag:'Star',
+    type:i?'M dwarf · cooler secondary star':'K dwarf · brighter primary star',alias:'Kepler-16 sun binary '+(i?'secondary red dwarf':'primary orange dwarf'),
+    facts:[['Radius',st.R+' × Sun'],['Mass',st.M+' × Sun'],['Temperature','Approximately '+st.T.toLocaleString('en-US')+' K'],['Binary period','About 41.08 days'],['Binary eccentricity','0.15944'],['Luminosity','Approximately '+st.luminosity.toFixed(4)+' × Sun']],
+    note:'This star and its companion orbit their shared center of mass; Kepler-16b orbits both. Stellar sizes and the eccentric orbit use published system parameters. Orbit orientation and phase are illustrative, not an eclipse prediction. Surface and starspot patterns are artistic reconstructions.'};
+}));
 const BODY_ORDER = Object.keys(BODY);
 AST.forEach(A => addLabel(A.name,'body', () => A.P, A.D>=200 ? [[9.6,13.2]] : [[6,13.2]], { sizeR:A.R, key:'a:'+A.k, cat:'asteroids', ...(A.D<200 ? { within:() => A.P, maxDist:0.35*AU } : {}) }));
 DWARFS.forEach(dw => addLabel(dw.name,'body', () => dw.P, dw.k==='ceres' ? [[9.5,13.6]] : [[11.2,15.6]], { occlude:true, sizeR:dw.R, key:dw.k }));
 MOONS.forEach(m => addLabel(m[2],'body', () => m.P, [[Math.log10(m.a)-0.8, Math.log10(m.a)+2]], { occlude:true, sizeR:m.R, key:'m:'+m[1], within:() => eph.p[m[0]], maxDist:m.a*80 }));
 EXO.forEach(sys => {
+  sys.stars.filter(st=>st.key).forEach(st=>addLabel(st.name,'star',()=>st.P,[[-9,22]],{key:'x:'+st.key,sizeR:st.Rm,within:()=>sys.P,maxDist:sys.aMax*60}));
   if (sys.key!=='proxima' && sys.key!=='alphacen') addLabel(sys.name,'star', () => sys.P, [[15.7,19.4]], { key:'x:'+sys.key });
   sys.planets.forEach(o => addLabel(o.name,'body', () => o.P, [[-9,22]], { sizeR:o.R, key:'x:'+o.key, within:() => sys.P, maxDist:sys.aMax*60 }));
 });
@@ -3076,7 +3116,7 @@ function frame(now){
     if (!near){ sys.planets.forEach(o=>{ o.mesh.visible=false; o.orbit.visible=false; }); continue; }
     const oa = SHOW.orbits ? 1-smooth(sys.aMax*60, sys.aMax*300, camD) : 0;
     for (const st of sys.stars){
-      place(st.mesh, st.P, st.Rm, d); orientBody(st.mesh, spinFrame(sys.pole, (SHOW.spin?spinT/30:0)*Math.PI*2, V()), sys.pole);
+      if(st.key) loadVisibleBodyMap('x:'+st.key); place(st.mesh, st.P, st.Rm, d); orientBody(st.mesh, spinFrame(sys.pole, (SHOW.spin?spinT/30:0)*Math.PI*2, V()), sys.pole);
       place(st.glow, st.P, Math.max(st.Rm*9, camWorld.distanceTo(st.P)*(12*DPR)/pixPerRad), d);
       st.light.position.copy(st.mesh.position); st.light.distance = 3*Math.max(sys.aMax,0.05*AU)/d;
       if (st.orbit && oa>0.01){ st.orbit.visible=true; st.orbit.material.opacity=0.35*oa; place(st.orbit, sys.P, st.r, d); mTmp.makeBasis(sys.e1, sys.e2, sys.pole); st.orbit.quaternion.setFromRotationMatrix(mTmp); }
