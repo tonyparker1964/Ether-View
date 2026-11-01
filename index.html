@@ -135,6 +135,7 @@ body{background:var(--void);color:var(--ink);font-family:var(--f-ui);overflow:hi
 .c3itl button{appearance:none;width:100%;text-align:left;display:grid;grid-template-columns:auto 1fr;gap:1px 10px;padding:6px 8px;border-radius:7px;border:1px solid transparent;background:none;color:var(--ink);cursor:pointer;font:inherit}
 .c3itl button:hover{background:rgba(255,255,255,.04)}
 .c3itl button.now{border-color:rgba(143,216,255,.5);background:rgba(143,216,255,.08)}
+.c3itl li.era{margin:8px 0 2px;font:500 calc(10px*var(--fs))/1 var(--f-ui);letter-spacing:.18em;text-transform:uppercase;color:var(--ink-dim)}
 .c3itl span{grid-row:span 2;font:500 calc(10.5px*var(--fs))/1.3 var(--f-mono);color:#8fd8ff;white-space:nowrap;padding-top:2px}
 .c3itl b{font:500 calc(13px*var(--fs))/1.3 var(--f-ui)}
 .c3itl small{font-size:calc(11.5px*var(--fs));line-height:1.4;color:var(--ink-dim)}
@@ -1480,8 +1481,8 @@ function updateComet(jd){
 }
 const comet3i = (() => {
   // the path: the part of the hyperbola within 60 AU of the Sun
-  const numax=Math.acos(-1/C3I.e), pts=[], v=V();
-  for (let k=0;k<=600;k++){ const nu=-numax+0.002+(2*numax-0.004)*k/600, r=C3I.a*(1-C3I.e*C3I.e)/(1+C3I.e*Math.cos(nu)); if (r>60 || r<0) continue; hyperXYZ(nu, r, v); pts.push(v.x,v.y,v.z); }
+  const pts=[], v=V(), Hmax=Math.acosh((2e5/(-C3I.a)+1)/C3I.e);   // out to 200,000 AU, sampled evenly in hyperbolic anomaly
+  for (let k=0;k<=1600;k++){ const H=-Hmax+2*Hmax*k/1600, r=C3I.a*(1-C3I.e*Math.cosh(H)), nu=2*Math.atan(Math.sqrt((C3I.e+1)/(C3I.e-1))*Math.tanh(H/2)); hyperXYZ(nu, r, v); pts.push(v.x,v.y,v.z); }
   const og=new THREE.BufferGeometry(); og.setAttribute('position', new THREE.Float32BufferAttribute(pts,3));
   const orbit=new THREE.Line(og, new THREE.LineBasicMaterial({ color:0x8fd8ff, transparent:true, opacity:0.5, depthWrite:false })); orbit.frustumCulled=false; scene.add(orbit);
   // Ether's artwork of the comet, turned so its tails always stream away from the Sun
@@ -2168,21 +2169,32 @@ BODY['c:jwst'] = { name:'James Webb Space Telescope', ref:'Webb', R:14, type:'In
   facts:[['Distance from Earth','About 1.5 million km'],['Primary mirror','6.5 m, 18 gold segments'],['Sunshield','About 21 × 14 m'],['Launched','December 25, 2021']],
   note:'Webb loops around the L2 point, on the far side of Earth from the Sun; that halo orbit is simplified to the L2 point itself here.' };
 BODY['c:3i'] = { name:'3I/ATLAS', ref:'3I/ATLAS', R:2800, view:6000, type:'Interstellar comet · the third object known from another star', group:'comet', P:C3I.P, alias:'3i atlas 3iatlas c/2025 n1 interstellar comet', tag:'Interstellar comet',
-  facts:[['Discovered','1 July 2025, ATLAS survey, Río Hurtado, Chile'],['Also called','C/2025 N1'],['Perihelion','29 Oct 2025, 1.36 AU from the Sun'],['Eccentricity','6.14 (hyperbolic: it is not bound to the Sun)'],['Speed leaving','About 58 km/s'],['Tilt','175° (retrograde, close to the ecliptic)'],['Nucleus','Probably under 1 km across'],['Closest to Earth','1.80 AU, 19 Dec 2025'],['Passed Jupiter','0.36 AU, 16 Mar 2026']],
+  facts:[['Discovered','1 July 2025, ATLAS survey, Río Hurtado, Chile'],['Also called','C/2025 N1'],['Perihelion','29 Oct 2025, 1.36 AU from the Sun'],['Eccentricity','6.14 (hyperbolic: it is not bound to the Sun)'],['Speed','61 km/s at discovery, 68 km/s at perihelion, leaving at 58 km/s (about 130,000 mph)'],['Tilt','175° (retrograde, close to the ecliptic)'],['Nucleus','Probably under 1 km across'],['Closest to Earth','1.80 AU, 19 Dec 2025'],['Passed Jupiter','0.36 AU, 16 Mar 2026']],
   note:'Only the third object ever seen passing through from another star system, after ʻOumuamua (2017) and 2I/Borisov (2019). It may be older than the Solar System. JWST found carbon dioxide, water and methane in its coma, and ESA’s JUICE imaged it near Jupiter in March 2026. Its path here uses real orbital elements; the close-up is Ether’s artwork, not to scale.' };
 // 3I/ATLAS's journey: each event lines up with its real position on the orbit above
+const C3I_PERI_MS = Date.parse('2025-10-29T11:45Z'), c3iYr = y => C3I_PERI_MS + (y-2025.826)*365.2425*86400e3;
 const C3I_TIMELINE = [
-  { t:'2025-07-01T06:00Z', title:'Discovery', z:12.0, text:'Found by the ATLAS survey telescope at Río Hurtado, Chile, 4.5 AU from the Sun. Hubble soon images it to size up the nucleus.' },
-  { t:'2025-08-06T12:00Z', title:'Webb reads its chemistry', z:12.0, text:'JWST finds a coma dominated by carbon dioxide, unlike most comets, and Gemini South photographs a growing tail.' },
-  { t:'2025-09-10T12:00Z', title:'Spacecraft join the watch', z:12.0, text:'Spacecraft across the solar system track it, including Psyche, STEREO and MAVEN.' },
-  { t:'2025-10-03T04:38Z', title:'Passing Mars', z:10.75, at:'mars', text:'Closest to Mars, 0.19 AU (29 million km). Mars Reconnaissance Orbiter photographs it, and Perseverance catches it from the Martian surface.' },
-  { t:'2025-10-29T11:45Z', title:'Perihelion', z:11.9, at:'sun', text:'Closest to the Sun, 1.36 AU, inside the orbit of Mars, under intense solar heating. From Earth it is hidden in the Sun’s glare.' },
-  { t:'2025-12-19T06:01Z', title:'Closest to Earth', z:12.15, at:'earth', text:'1.80 AU, about 167 million miles: a safe distance, as it re-emerges from the Sun’s glare.' },
-  { t:'2026-03-16T12:22Z', title:'Past Jupiter', z:11.4, at:'jupiter', text:'0.36 AU (54 million km) from Jupiter as it speeds out toward interstellar space; NASA’s Juno gathers observations, still being studied.' } ];
-C3I_TIMELINE.forEach(e => { e.ms=Date.parse(e.t); e.when=new Date(e.ms).toLocaleDateString('en-US',{ month:'short', day:'numeric', year:'numeric', timeZone:'UTC' }); });
+  { era:'Before it reached us', y:-998000, when:'~1 million years ago', title:'Between the stars', z:18.6, text:'About 193 light-years away, drifting through the interstellar medium. Its path and chemistry suggest it formed around another star, possibly billions of years before our Sun.' },
+  { era:'Before it reached us', y:-7975, when:'~8,000 BCE', title:'Into the Sun’s reach', z:16.2, text:'About 1.9 light-years (122,000 AU) out, entering the far edge of the Oort Cloud, where the Sun’s gravity begins to matter.' },
+  { era:'Before it reached us', y:1025, when:'~1025', title:'Through the Oort Cloud', z:15.2, text:'About 12,000 AU out, falling inward from the direction of Sagittarius, near the center of the Milky Way.' },
+  { era:'Before it reached us', y:1925, when:'~1925', title:'The Sun’s backyard', z:14.2, text:'About 1,240 AU away, far past Pluto and completely unknown.' },
+  { era:'Before it reached us', y:2015.5, when:'~2015', title:'Crossing the heliopause', z:13.2, text:'About 127 AU out, entering the Sun’s magnetic bubble, more than three times Pluto’s distance, still undetected.' },
+  { era:'Its visit', t:'2025-07-01T06:00Z', title:'Discovery', z:12.0, text:'Found by the ATLAS survey telescope at Río Hurtado, Chile, 4.5 AU from the Sun. Hubble soon images it to size up the nucleus.' },
+  { era:'Its visit', t:'2025-08-06T12:00Z', title:'Webb reads its chemistry', z:12.0, text:'JWST finds a coma dominated by carbon dioxide, unlike most comets, and Gemini South photographs a growing tail.' },
+  { era:'Its visit', t:'2025-09-10T12:00Z', title:'Spacecraft join the watch', z:12.0, text:'Spacecraft across the solar system track it, including Psyche, STEREO and MAVEN.' },
+  { era:'Its visit', t:'2025-10-03T04:38Z', title:'Passing Mars', z:10.75, at:'mars', text:'Closest to Mars, 0.19 AU (29 million km). Mars Reconnaissance Orbiter photographs it, and Perseverance catches it from the Martian surface.' },
+  { era:'Its visit', t:'2025-10-29T11:45Z', title:'Perihelion', z:11.9, at:'sun', text:'Closest to the Sun, 1.36 AU, inside the orbit of Mars, under intense solar heating. From Earth it is hidden in the Sun’s glare.' },
+  { era:'Its visit', t:'2025-12-19T06:01Z', title:'Closest to Earth', z:12.15, at:'earth', text:'1.80 AU, about 167 million miles: a safe distance, as it re-emerges from the Sun’s glare.' },
+  { era:'Its visit', t:'2026-03-16T12:22Z', title:'Past Jupiter', z:11.4, at:'jupiter', text:'0.36 AU (54 million km) from Jupiter as it speeds out toward interstellar space; NASA’s Juno gathers observations, still being studied.' },
+  { era:'Leaving', y:2036, when:'2036', title:'Into interstellar space', z:13.2, text:'About 126 AU out. It left the Kuiper Belt around 2030 and crosses the heliopause, the edge of the Sun’s magnetic bubble, around 2035–36. Frozen and inert, invisible to all but the largest telescopes.' },
+  { era:'Leaving', y:2126, when:'2126', title:'Toward the Oort Cloud', z:14.2, text:'About 1,230 AU out, nearing the inner Oort Cloud (around 2,000 AU, reached about 2190). Where native comets drift, it tears straight through at 58 km/s.' },
+  { era:'Leaving', y:3026, when:'3026', title:'Crossing the Oort Cloud', z:15.2, text:'About 12,000 AU from the Sun, coasting through the icy, sparse Oort Cloud.' },
+  { era:'Leaving', y:12026, when:'12,026', title:'Free of the Sun', z:16.2, text:'About 1.9 light-years (122,000 AU) out, clearing the outer Oort Cloud and the edge of the Sun’s gravitational reach for good.' },
+  { era:'Leaving', y:1002026, when:'1,002,026', title:'Among the stars again', z:18.6, text:'About 193 light-years away, between the stars. Over millions of years it may pass near another star system.' } ];
+C3I_TIMELINE.forEach(e => { if (e.t){ e.ms=Date.parse(e.t); e.when=new Date(e.ms).toLocaleDateString('en-US',{ month:'short', day:'numeric', year:'numeric', timeZone:'UTC' }); } else e.ms=c3iYr(e.y); });
 const c3iNow = () => { let i=-1; C3I_TIMELINE.forEach((e,j) => { if (simTime>=e.ms-12*3600e3) i=j; }); return i; };
 function c3iTimelineHTML(){ const n=c3iNow();
-  return `<h3>Its journey</h3><button type="button" class="btn text c3iplay" data-c3i="play">&#9654; Play the journey</button><ol class="c3itl">${C3I_TIMELINE.map((e,i) => `<li><button type="button" data-c3i="${i}" class="${i===n?'now':''}"><span>${e.when}</span><b>${e.title}</b><small>${e.text}</small></button></li>`).join('')}</ol>`; }
+  return `<h3>Its journey</h3><button type="button" class="btn text c3iplay" data-c3i="play">&#9654; Play the journey</button><ol class="c3itl">${C3I_TIMELINE.map((e,i) => `${i===0||C3I_TIMELINE[i-1].era!==e.era?`<li class="era">${e.era}</li>`:''}<li><button type="button" data-c3i="${i}" class="${i===n?'now':''}"><span>${e.when}</span><b>${e.title}</b><small>${e.text}</small></button></li>`).join('')}</ol>`; }
 function c3iGo(i){ const e=C3I_TIMELINE[i]; simTime=e.ms; FROZEN=false; setDir(0); updateEphemeris(simTime); updateComet(eph.jd); updateSkyPanel(); refreshDateUI();
   startFlight({ target:'c:3i', w:1 }, e.z, 'lit'); }
 function c3iPlay(){ simTime=Date.parse('2025-06-20T00:00Z'); unitIdx=3; FROZEN=false; setDir(1); updateEphemeris(simTime); updateComet(eph.jd); updateSkyPanel(); refreshDateUI();
@@ -2190,9 +2202,9 @@ function c3iPlay(){ simTime=Date.parse('2025-06-20T00:00Z'); unitIdx=3; FROZEN=f
 const storyToast = document.getElementById('storyToast'); let storyShown = -2;
 function updateC3iStory(){ // a caption for each event while the clock is within a few days of it and 3I/ATLAS is in view
   const focus = activeTarget()==='c:3i' || infoKey==='c:3i'; let k=-1;
-  if (focus) C3I_TIMELINE.forEach((e,i) => { if (Math.abs(simTime-e.ms) < 4*86400e3) k=i; });
+  if (focus) C3I_TIMELINE.forEach((e,i) => { const win = e.t ? 4*86400e3 : Math.max(4*86400e3, Math.abs(e.y-2025.8)*0.02*365.25*86400e3); if (Math.abs(simTime-e.ms) < win) k=i; });
   if (k!==storyShown){ storyShown=k; if (k<0) storyToast.hidden=true; else { const e=C3I_TIMELINE[k]; storyToast.innerHTML=`<b>${e.when} · ${e.title}</b>${e.text}`; storyToast.hidden=false; } }
-  if (infoKey==='c:3i'){ const n=c3iNow(); infoEl.querySelectorAll('.c3itl button').forEach((b,i) => b.classList.toggle('now', i===n)); }
+  if (infoKey==='c:3i'){ const n=c3iNow(); infoEl.querySelectorAll('.c3itl li:not(.era) button').forEach((b,i) => b.classList.toggle('now', i===n)); }
 }
 [['lmc','Large Magellanic Cloud',7000,'Dorado','Satellite galaxy of the Milky Way',[['Distance','About 160,000 ly'],['Size','About 14,000 ly across'],['Stars','About 30 billion'],['Home to','The Tarantula Nebula and Supernova 1987A']],'A dwarf galaxy orbiting our own, easy to see with the naked eye from the Southern Hemisphere.'],
  ['smc','Small Magellanic Cloud',3500,'Tucana','Satellite galaxy of the Milky Way',[['Distance','About 200,000 ly'],['Size','About 7,000 ly across'],['Stars','A few hundred million'],['Named for','Ferdinand Magellan’s 1519–1522 voyage']],'The smaller companion of the Large Magellanic Cloud; the two are linked by a bridge of gas.']].forEach(([k,n,r,con,type,facts,note]) => {
@@ -2234,7 +2246,7 @@ const REGION_BODIES = {
 };
 Object.entries(REGION_BODIES).forEach(([k,r]) => { BODY[k] = Object.assign({ R:R_SUN, group:'region', P:eph.sun }, r); });
 const BODY_ORDER = Object.keys(BODY);
-addLabel('3I/ATLAS','body', () => C3I.P, [[6,14.6]], { sizeR:2800, key:'c:3i', cat:'asteroids' });
+addLabel('3I/ATLAS','body', () => C3I.P, [[6,19.5]], { sizeR:2800, key:'c:3i', cat:'asteroids' });
 AST.forEach(A => addLabel(A.name,'body', () => A.P, A.D>=200 ? [[9.6,13.2]] : [[6,13.2]], { sizeR:A.R, key:'a:'+A.k, cat:'asteroids', ...(A.D<200 ? { within:() => A.P, maxDist:0.35*AU } : {}) }));
 DWARFS.forEach(dw => addLabel(dw.name,'body', () => dw.P, dw.k==='ceres' ? [[9.5,13.6]] : [[11.2,15.6]], { occlude:true, sizeR:dw.R, key:dw.k }));
 MOONS.forEach(m => addLabel(m[2],'body', () => m.P, [[Math.log10(m.a)-0.8, Math.log10(m.a)+2]], { occlude:true, sizeR:m.R, key:'m:'+m[1], within:() => eph.p[m[0]], maxDist:m.a*80 }));
@@ -3678,8 +3690,8 @@ function frame(now){
     for (const A of AST){ place(A.mesh, A.P, A.R, d); orientBody(A.mesh, spinFrame(Z, (hours/6 + (SHOW.spin?spinT/9:0))*Math.PI*2 % (Math.PI*2), V()), Z);
       const show = SHOW.orbits && (tk==='a:'+A.k || infoKey==='a:'+A.k); A.orbit.visible=show; if (show){ place(A.orbit, eph.sun, AU, d); A.orbit.material.opacity=0.5*rangeAlpha([[7,15.6]],zoom); } } }
   { // 3I/ATLAS: its path, and Ether's artwork with the tails pointed away from the Sun
-    const tk=activeTarget(), sel = tk==='c:3i' || infoKey==='c:3i', oa = SHOW.orbits ? rangeAlpha([[9.2,14.6]], zoom)*(sel?1:0.55) : 0;
-    comet3i.orbit.visible = oa>0.01 && C3I.r<80; if (comet3i.orbit.visible){ comet3i.orbit.material.opacity=0.55*oa; place(comet3i.orbit, eph.sun, AU, d); }
+    const tk=activeTarget(), sel = tk==='c:3i' || infoKey==='c:3i', oa = SHOW.orbits ? rangeAlpha([[9.2,sel?18.2:14.6]], zoom)*(sel?1:0.55) : 0;
+    comet3i.orbit.visible = oa>0.01; if (comet3i.orbit.visible){ comet3i.orbit.material.opacity=0.55*oa; place(comet3i.orbit, eph.sun, AU, d); }
     const art=comet3i.art, near=camWorld.distanceTo(C3I.P) < 3e7; art.visible=near;
     if (near){ place(art, C3I.P, C3I_ART_H, d);
       const ac=tmpV.copy(C3I.anti).applyQuaternion(tmpQ.copy(camera.quaternion).invert()), th=Math.atan2(ac.y, ac.x)+Math.PI;
