@@ -28,4 +28,18 @@ then visit http://localhost:8000.
 - Moon surface map: © 2010–2017 [Solar System Scope](https://www.solarsystemscope.com/textures/), based on NASA imagery, [CC BY 4.0](https://creativecommons.org/licenses/by/4.0/).
 - Planet positions: NASA JPL approximate Keplerian elements. Star, nebula, black-hole and exoplanet values from published catalogs.
 - 3D rendering: [three.js](https://threejs.org) (MIT), loaded from cdnjs.
-- Nebula images are generated for this app in the style of telescope views. Astrological meanings are offered for reflection.
+- Horsehead, Eagle, Ring, Helix and Cat’s Eye images are telescope observations, credited with source links in their details panels. Other nebula images remain illustrations. Telescope filters may produce enhanced or assigned colors. Astrological meanings are offered for reflection.
+
+## Verification
+
+Run `node verify.cjs` for orbital geometry, quantum-string precision and exact-name search regressions. The JPL short-range elements are fitted for 1800–2050; deep-time positions are illustrative.
+
+## Telescope image sources
+
+- [Cat’s Eye](https://science.nasa.gov/asset/hubble/cats-eye-nebula/) — NASA, ESA, Hubble Heritage Team (STScI/AURA).
+- [Horsehead](https://science.nasa.gov/asset/hubble/the-horsehead-nebula/) — NASA, NOAO, ESA, Hubble Heritage Team (STScI/AURA); K. Noll, C. Luginbuhl, F. Hamilton.
+- [Eagle](https://science.nasa.gov/asset/hubble/eagle-nebula-pillars-of-creation/) — NASA, ESA, Hubble Heritage Team (STScI/AURA).
+- [Ring](https://science.nasa.gov/asset/hubble/hubble-captures-a-ring/) — NASA, ESA, Hubble Heritage (STScI/AURA)-ESA/Hubble Collaboration.
+- [Helix](https://science.nasa.gov/asset/hubble/the-helix-nebula-a-gaseous-envelope-expelled-by-a-dying-star/) — NASA, ESA, C.R. O’Dell (Vanderbilt University), M. Meixner and P. McCullough (STScI).
+
+The downloaded NASA web renditions are bundled locally. The 3D renderer preserves their aspect ratio and fades their edges; downloaded images are otherwise unchanged.
