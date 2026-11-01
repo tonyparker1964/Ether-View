@@ -141,6 +141,15 @@ body{background:var(--void);color:var(--ink);font-family:var(--f-ui);overflow:hi
 .c3itl small{font-size:calc(11.5px*var(--fs));line-height:1.4;color:var(--ink-dim)}
 #storyToast{position:fixed;left:50%;top:calc(106px + env(safe-area-inset-top,0px));transform:translateX(-50%);z-index:8;width:min(34rem,calc(100vw - 32px));padding:10px 14px;border-radius:10px;background:rgba(8,20,32,.86);border:1px solid rgba(143,216,255,.5);color:#d8efff;font:400 calc(12.5px*var(--fs))/1.45 var(--f-ui);pointer-events:none;box-shadow:0 0 24px rgba(120,200,255,.18)}
 #storyToast b{display:block;margin-bottom:2px;color:#9fdcff;font-weight:600;letter-spacing:.02em}
+#scaleBar{pointer-events:auto;position:fixed;right:max(14px,env(safe-area-inset-right,0px));bottom:calc(14px + env(safe-area-inset-bottom,0px));z-index:5;display:flex;align-items:center;gap:10px;padding:6px 8px 6px 12px;border-radius:12px;background:rgba(9,11,19,.72);border:1px solid var(--line);font:500 calc(11px*var(--fs))/1.2 var(--f-mono);color:var(--ink);-webkit-backdrop-filter:blur(10px);backdrop-filter:blur(10px)}
+#scaleBar .sbcol{display:flex;flex-direction:column;gap:3px}
+#scaleBar .sbrow{display:flex;align-items:center;gap:8px}
+#scaleBar .sbline{display:block;height:6px;border:1.5px solid var(--ink);border-top:0;min-width:10px}
+#scaleBar .sbearth{color:var(--ink-dim);font-size:calc(10px*var(--fs))}
+#scaleBar .btn{height:26px;padding:0 10px;font-size:calc(10px*var(--fs))}
+#scaleBar .btn[aria-pressed="true"]{color:#1a1206;background:var(--sun);border-color:var(--sun)}
+#hud.boot #scaleBar{display:none}
+@media (max-width:760px){ #scaleBar .sbearth{display:none} }
 #alignToast{position:fixed;left:50%;top:calc(64px + env(safe-area-inset-top,0px));transform:translateX(-50%);z-index:8;max-width:calc(100vw - 32px);padding:8px 14px;border-radius:999px;background:rgba(40,30,10,.82);border:1px solid rgba(255,210,120,.55);color:#ffe2a8;font:500 calc(12.5px*var(--fs))/1.3 var(--f-ui);letter-spacing:.03em;pointer-events:none;box-shadow:0 0 24px rgba(255,200,100,.25)}
 .scats{display:flex;flex-wrap:wrap;gap:5px;padding:4px 4px 8px;border-bottom:1px solid var(--line);margin-bottom:4px;cursor:default!important;background:none!important}
 .scats .chip{padding:5px 9px;font-size:calc(11px*var(--fs))}
@@ -403,6 +412,7 @@ body{background:var(--void);color:var(--ink);font-family:var(--f-ui);overflow:hi
 
   <div id="alignToast" hidden role="status"></div>
   <div id="storyToast" hidden role="status"></div>
+  <div id="scaleBar" aria-live="off"><div class="sbcol"><div class="sbrow"><span class="sbline" id="sbLine"></span><span id="sbText">1 AU</span></div><span class="sbearth" id="sbEarth"></span></div><button type="button" class="btn text" id="trueBtn" aria-pressed="false" title="Show every body at its true size: no glows or enlarged dots">True scale</button></div>
   <section class="find panel" id="findPanel" aria-label="Search" data-drag>
     <span class="grip" aria-hidden="true" title="Drag to move"></span>
     <div class="search">
@@ -450,6 +460,7 @@ body{background:var(--void);color:var(--ink);font-family:var(--f-ui);overflow:hi
       <label class="switch"><input type="checkbox" data-layer="beltSwirl"><span></span>Swirl the asteroid &amp; Kuiper belts</label>
       <label class="switch"><input type="checkbox" data-layer="skySwirl"><span></span>Swirl the stars around Sagittarius A*</label>
       <label class="switch"><input type="checkbox" data-layer="alignPulse"><span></span>Golden pulse when planets align</label>
+      <label class="switch"><input type="checkbox" data-layer="trueScale" id="trueScaleSw"><span></span>True scale: no glows or enlarged dots</label>
       <p class="lnote">Planets follow the date shown, so they move along their orbits as time runs. <button type="button" class="linkbtn" id="watchOrbits">Watch them orbit (30 days per second)</button></p>
       <h2>Names <span class="namebtns"><button type="button" class="linkbtn" id="namesAll">All</button><button type="button" class="linkbtn" id="namesNone">None</button></span></h2>
       <label class="switch"><input type="checkbox" data-name="bodies"><span></span>Sun, planets, moons &amp; spacecraft</label>
@@ -1758,6 +1769,7 @@ void main(){
   gl_FragColor=vec4(col, a);
 }`;
 const tmpQ = new THREE.Quaternion();
+const sbLine=document.getElementById('sbLine'), sbText=document.getElementById('sbText'), sbEarth=document.getElementById('sbEarth'), trueBtn=document.getElementById('trueBtn');
 const SGRA_U = { uMap:{ value:null }, uT:{ value:0 }, uReady:{ value:0 } };
 new THREE.TextureLoader().load('img/sgra-4k.jpg', t => { t.anisotropy=MAX_ANISO; t.wrapS=t.wrapT=THREE.ClampToEdgeWrapping; SGRA_U.uMap.value=t; SGRA_U.uReady.value=1; });
 BH.forEach(b => {
@@ -2122,7 +2134,7 @@ const rateSec = () => dir*UNITS[unitIdx][2];
 let zoom = 7.3, zoomTarget = 7.3, flight = null, lastD = 2e7;
 let cur = { target:null }, wEff = 0;      // body the view is centred on (null = automatic by distance)
 let az = 0, el = -8*DEG, mode = 'local';
-const SHOW = { stringColors:'bodies', strings:true, stringTrans:45, textSize:1.2, asteroids:true, grid:false, zodiacMode:'sidereal', orbitsFast:false, beltSwirl:true, skySwirl:true, alignPulse:true, orbits:true, constellations:true, stars:true, zodiac:true, axes:false, spin:true, names:{ asteroids:true, bodies:true, stars:true, constellations:true, deep:true, places:true } };
+const SHOW = { stringColors:'bodies', strings:true, stringTrans:45, textSize:1.2, asteroids:true, grid:false, zodiacMode:'sidereal', orbitsFast:false, beltSwirl:true, skySwirl:true, alignPulse:true, trueScale:false, orbits:true, constellations:true, stars:true, zodiac:true, axes:false, spin:true, names:{ asteroids:true, bodies:true, stars:true, constellations:true, deep:true, places:true } };
 try { const v=JSON.parse(localStorage.getItem('ethers-view-layers')||'null'); if (v){ Object.assign(SHOW, v, { names:Object.assign(SHOW.names, v.names||{}) }); } } catch(e){}
 let spinT = 0;
 const camWorld = V(), F = V(), Fa = V(), Fb = V(), lastDir = V(1,0,0);
@@ -2767,6 +2779,10 @@ const zodMode=document.getElementById('zodMode');
 const applyZod = () => { zodMode.value=SHOW.zodiacMode; document.getElementById('zodMeta').textContent='Geocentric · '+(sidereal()?'sidereal':'tropical'); };
 applyZod();
 zodMode.addEventListener('change', () => { SHOW.zodiacMode=zodMode.value; applyZod(); saveLayers(); infoZ=''; updateSkyPanel(); });
+const applyTrue = () => { trueBtn.setAttribute('aria-pressed', String(!!SHOW.trueScale)); const sw=document.getElementById('trueScaleSw'); if (sw) sw.checked=!!SHOW.trueScale; };
+trueBtn.addEventListener('click', () => { SHOW.trueScale=!SHOW.trueScale; applyTrue(); saveLayers(); });
+layersEl.addEventListener('change', e => { if (e.target.dataset.layer==='trueScale') applyTrue(); });
+applyTrue();
 const textSize=document.getElementById('textSize'), textSizeOut=document.getElementById('textSizeOut');
 const applyTextSize = () => { document.documentElement.style.setProperty('--fs', SHOW.textSize); textSize.value=String(SHOW.textSize); textSizeOut.textContent=Math.round(SHOW.textSize*100)+'%'; };
 applyTextSize();
@@ -2956,7 +2972,7 @@ const AL_KEYS = ['mercury','venus','emb','mars','jupiter','saturn','uranus','nep
 const ALIGN2 = new Set(); let alignKey = '', alignClock = 0, alignPairs = [];
 const alName = k => k==='emb' ? 'Earth' : BODY[k].name;
 const alPos = k => k==='emb' ? eph.earth : eph.p[k];
-const ringGeo = new THREE.RingGeometry(0.93, 1, 160);
+const ringGeo = new THREE.RingGeometry(0.985, 1, 256);
 const mkRing = () => { const m=new THREE.Mesh(ringGeo, new THREE.MeshBasicMaterial({ color:0xffd27a, transparent:true, opacity:0, blending:THREE.AdditiveBlending, depthWrite:false, side:THREE.DoubleSide })); m.frustumCulled=false; m.visible=false; m.renderOrder=40; scene.add(m); return m; };
 const SUN_RIP = [0,1].map(() => ({ m:mkRing(), t:-1, R:0 }));
 // Each aligned world breathes like Ether's Field's meditative Breath mode: seven wavering rings that swell on the inhale at
@@ -3651,7 +3667,7 @@ document.getElementById('bangSound').addEventListener('click', e => { BANG.sound
   bangTrack.addEventListener('pointerup', () => scrub=false);
   bangTrack.addEventListener('keydown', e => { if (e.key==='ArrowRight'||e.key==='ArrowLeft'){ BANG.t=clamp(BANG.t+(e.key==='ArrowRight'?0.02:-0.02),0,1); if (MUSIC.ok) MUSIC.el.currentTime=BANG.t*BANG_DUR; e.preventDefault(); } }); }
 
-let last=performance.now(), hudT=0, skyT=0, loadingEl=document.getElementById('loading');
+let last=performance.now(), hudT=0, skyT=0, scaleBarT=1, loadingEl=document.getElementById('loading');
 function frame(now){
   const dt = Math.min(0.1, (now-last)/1000); last=now;
   const adt = FROZEN ? 0 : dt; animMs += adt*1000; const anow = animMs;   // animations run on their own clock, which Stop freezes
@@ -3711,11 +3727,12 @@ function frame(now){
   orientBody(earth, SHOW.spin ? spinFrame(eqN, gm + spinT*Math.PI*2/24, V()) : xe, eqN);
   clouds.rotation.y = (simTime/86400000)*0.35 % (Math.PI*2);
 
+  PLANETS.forEach(p => { if (p.rocks) p.rocks.visible = !SHOW.trueScale; });
   place(sunMesh, eph.sun, R_SUN, d); orientBody(sunMesh, spinFrame(SUN_POLE, (simTime/3600000/609.1 + (SHOW.spin?spinT/40:0))*Math.PI*2 % (Math.PI*2), V()), SUN_POLE);
   const sunScene = sunMesh.position;
   sunLight.position.copy(sunScene); sunLight.decay=0.0001; sunLight.distance=6000*AU/d;
   const camToSun = camWorld.distanceTo(eph.sun);
-  const glowWorld = (1+0.35*beat())*Math.max(R_SUN*lerp(2.4,7,smooth(8*R_SUN,40*R_SUN,camToSun)), camToSun*(16*DPR)/pixPerRad) * (1 - smooth(15.4,16.6,zoom));
+  const glowWorld = SHOW.trueScale ? R_SUN*1.5 : (1+0.35*beat())*Math.max(R_SUN*lerp(2.4,7,smooth(8*R_SUN,40*R_SUN,camToSun)), camToSun*(16*DPR)/pixPerRad) * (1 - smooth(15.4,16.6,zoom));
   sunGlow.position.copy(sunScene); sunGlow.scale.setScalar(Math.max(glowWorld,1)/d); sunGlow.visible = glowWorld>0;
 
   const hours = (simTime/3600000);
@@ -3788,7 +3805,7 @@ function frame(now){
   { const ga = SHOW.grid ? rangeAlpha([[9.4,15.6]], zoom) : 0; eclGrid.visible=ga>0.01; eclGrid.material.opacity=0.22*ga; place(eclGrid, eph.sun, AU, d); }
   if (Math.abs(eph.jd-moonOrbitJD) > 0.5) refreshMoonOrbit(eph.jd);
   const mo=SHOW.orbits ? rangeAlpha([[6.4,10.8]], zoom) : 0; moonOrbit.visible=mo>0.01; moonOrbit.material.opacity=0.4*mo; place(moonOrbit, eph.earth, 1e6, d);
-  { const aa = SHOW.asteroids ? rangeAlpha([[8.9,14.2]], zoom) : 0; asteroids.visible=aa>0.01; asteroids.material.uniforms.uAlpha.value=0.62*aa; place(asteroids, eph.sun, AU, d); }
+  { const aa = SHOW.asteroids && !SHOW.trueScale ? rangeAlpha([[8.9,14.2]], zoom) : 0; asteroids.visible=aa>0.01; asteroids.material.uniforms.uAlpha.value=0.62*aa; place(asteroids, eph.sun, AU, d); }
   { const tk=activeTarget();
     for (const A of AST){ place(A.mesh, A.P, A.R, d); orientBody(A.mesh, spinFrame(Z, (hours/6 + (SHOW.spin?spinT/9:0))*Math.PI*2 % (Math.PI*2), V()), Z);
       const show = SHOW.orbits && (tk==='a:'+A.k || infoKey==='a:'+A.k); A.orbit.visible=show; if (show){ place(A.orbit, eph.sun, AU, d); A.orbit.material.opacity=0.5*rangeAlpha([[7,15.6]],zoom); } } }
@@ -3800,7 +3817,7 @@ function frame(now){
       const ac=tmpV.copy(C3I.anti).applyQuaternion(tmpQ.copy(camera.quaternion).invert()), th=Math.atan2(ac.y, ac.x)+Math.PI;
       art.quaternion.copy(camera.quaternion).multiply(tmpQ.setFromAxisAngle(Z, th)); comet3i.U.uT.value=anow/1000; } }
   kuiper.rotation.z = (2*Math.PI*beltDemoDays/(365.25*Math.pow(42,1.5))) % (2*Math.PI);
-  [[kuiper,[[11.9,15.3]],0.5],[oort,[[14.1,17.3]],0.4]].forEach(([o,r,b]) => { const a=rangeAlpha(r,zoom); o.visible=a>0.01; o.material.opacity=b*a; place(o, eph.sun, AU, d); });
+  [[kuiper,[[11.9,15.3]],0.5],[oort,[[14.1,17.3]],0.4]].forEach(([o,r,b]) => { const a=SHOW.trueScale ? 0 : rangeAlpha(r,zoom); o.visible=a>0.01; o.material.opacity=b*a; place(o, eph.sun, AU, d); });
 
   // point clouds
   const lyPerUnit = d/LY;
@@ -3813,7 +3830,7 @@ function frame(now){
   { const pa=pdots.geometry.attributes.position.array, la=pdots.geometry.attributes.lum.array;
     DOT_BODIES.forEach((b,i) => { const P=bodyPos(b.k); pa[i*3]=P.x/LY; pa[i*3+1]=P.y/LY; pa[i*3+2]=P.z/LY;
       const rs=Math.max(P.length()/AU, 0.3), dist=Math.max(camWorld.distanceTo(P),1), px=b.R/dist*pixPerRad;
-      la[i] = 1.7e-14*b.R/rs * (1-smooth(2.5,5,px)); });
+      la[i] = SHOW.trueScale ? 0 : 1.7e-14*b.R/rs * (1-smooth(2.5,5,px)); });
     pdots.geometry.attributes.position.needsUpdate=true; pdots.geometry.attributes.lum.needsUpdate=true; }
 
   { const ca = SHOW.constellations ? 1-smooth(16.2,17,zoom) : 0; constellations.visible = ca>0.01; constellations.lines.material.opacity=0.42*ca; constellations.dots.material.opacity=0.85*ca;
@@ -3824,6 +3841,14 @@ function frame(now){
   renderer.render(scene, camera);
   updateLabels(d);
   hudT += dt; skyT += dt;
+  // the scale bar: a round length near 110 px, and how wide Earth really is at this scale
+  if ((scaleBarT += dt) > 0.15){ scaleBarT=0;
+    const mpp = camWorld.distanceTo(F) / (pixPerRad/DPR);          // meters per CSS pixel at the point in focus
+    const raw = mpp*110, unitsArr=[[LY,'ly'],[AU,'AU'],[1e3,'km'],[1,'m']]; let best=null;
+    for (const [u,n] of unitsArr){ const v=raw/u; if (v>=1 || u===1){ const p10=Math.pow(10,Math.floor(Math.log10(v))), m=v/p10, nice=(m>=5?5:m>=2?2:1)*p10; best=[nice*u, (nice>=1e4?nice.toLocaleString():+nice.toPrecision(3))+' '+n]; break; } }
+    if (best){ sbLine.style.width=(best[0]/mpp).toFixed(1)+'px'; sbText.textContent=best[1]; }
+    const ep = 2*R_EARTH/mpp; sbEarth.textContent = 'Earth here: '+(ep>=10 ? Math.round(ep)+' px' : ep>=0.01 ? ep.toPrecision(2)+' px' : ep>=1e-6 ? (1/ep>=1e6 ? '1/'+(Math.round(1/ep)).toExponential(1).replace('e+',' × 10^')+' px' : '1/'+Math.round(1/ep).toLocaleString()+' of a pixel') : 'far below a pixel');
+  }
   if (hudT > 0.1){ hudT=0; updateHUD(); }
   if (skyT > 0.35){ skyT=0; updateSkyPanel(); }
   if (loadingEl){ loadingEl.remove(); loadingEl=null; }
