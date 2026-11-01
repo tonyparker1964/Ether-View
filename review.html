@@ -98,7 +98,7 @@ body{background:var(--void);color:var(--ink);font-family:var(--f-ui);overflow:hi
 #rate{font:400 11.5px/1 var(--f-mono);color:var(--sun);min-width:6.6rem;text-align:center;font-variant-numeric:tabular-nums}
 
 /* search */
-.find{grid-area:find;justify-self:end;align-self:start;position:relative;width:min(26.5rem,100%);display:flex;align-items:center;gap:6px;padding:6px}
+.find{grid-area:find;justify-self:end;align-self:start;position:relative;z-index:10;width:min(26.5rem,100%);display:flex;align-items:center;gap:6px;padding:6px}
 .search{flex:1;display:flex;align-items:center;gap:8px;min-width:0;padding:0 8px;height:34px;border-radius:7px;background:rgba(255,255,255,.04);border:1px solid var(--line)}
 .search:focus-within{border-color:rgba(230,194,124,.6)}
 .search svg{width:14px;height:14px;flex:none;stroke:var(--ink-dim);fill:none;stroke-width:2}
@@ -452,7 +452,8 @@ body{background:var(--void);color:var(--ink);font-family:var(--f-ui);overflow:hi
       <p><b>Constellations</b> are drawn as they appear from the solar system and fade out as you leave it. <b>Planet spin</b> can run at real speed or sped up from the Layers panel.</p>
       <p><b>Computed for the date shown:</b> positions of the Sun, Moon and planets (approximate orbital elements, good to a fraction of a degree between 1800 and 2050 and increasingly approximate further out; beyond about 3,000 years the orbits are extrapolated from today’s, so deep-time positions are illustrative), the Moon's Earth-facing orientation, Earth's rotation, and the zodiac readings.</p>
       <p><b>Real catalog values:</b> the planet facts, named stars, nebulae and clusters, the Voyager directions, the Moon's named maria and craters, and the Milky Way's overall dimensions and arm layout.</p>
-      <p><b>Modeled stand-ins:</b> the close-up lunar terrain, the nebula images (generated for this app in the style of telescope views, not photographs), where moons and exoplanets sit along their orbits, black-hole visuals, spacecraft models and orbit phases, background stars and the galaxy's individual particles. A desktop build would swap these for LRO terrain, NASA texture maps and the Gaia catalog.</p>
+      <p><b>Nebula images:</b> Horsehead, Eagle, Ring, Helix and Cat's Eye use credited telescope observations, available in their details panels. Other nebula images remain illustrations. Telescope colors combine selected filters and may show enhanced or assigned colors.</p>
+      <p><b>Modeled stand-ins:</b> the close-up lunar terrain, where moons and exoplanets sit along their orbits, black-hole visuals, spacecraft models and orbit phases, background stars and the galaxy's individual particles.</p>
       <p><b>From Ether’s Field (Stellar Alignment):</b> the planet meanings, chakra tones, sky report, dwarf planets, Uranus’s rings and gold alignment glow. Moon surface map © 2010–2017 <a href="https://www.solarsystemscope.com/textures/" target="_blank" rel="noopener">Solar System Scope</a>, based on NASA imagery, used under CC BY 4.0. Uranus ring colors sampled from a NASA image (public domain). Meanings come from astrological and spiritual tradition, offered for reflection.</p>
       <p><b>Image credits:</b> planet and Sun portraits, and the surface maps wrapped onto those globes, are your own images from Ether’s Field, upscaled to 4K. Each photo shows one face, so each globe's far side mirrors it. </p>
     </section>
@@ -1217,16 +1218,28 @@ function buildNebulae(){ // illustrative 3D gas clouds around each catalog posit
   return pointCloud(new Float32Array(P), new Float32Array(T), new Float32Array(L), pointMat({ min:1, max:5, gain:1 }));
 }
 const nebulae = buildNebulae();
-// detailed nebula images (2048 px, generated for this app in the style of telescope views), shown as camera-facing layers
+// Observed telescope images replace the most schematic nebula illustrations.
+const NEB_PHOTO = {
+  catseye:{file:'img/nasa-catseye.jpg',credit:'NASA, ESA, and the Hubble Heritage Team (STScI/AURA)',source:'https://science.nasa.gov/asset/hubble/cats-eye-nebula/'},
+  horsehead:{file:'img/nasa-horsehead.jpeg',credit:'NASA, NOAO, ESA and the Hubble Heritage Team (STScI/AURA); K. Noll, C. Luginbuhl, F. Hamilton',source:'https://science.nasa.gov/asset/hubble/the-horsehead-nebula/'},
+  eagle:{file:'img/nasa-eagle.jpg',credit:'NASA, ESA, and the Hubble Heritage Team (STScI/AURA)',source:'https://science.nasa.gov/asset/hubble/eagle-nebula-pillars-of-creation/'},
+  ring:{file:'img/nasa-ring.jpeg',credit:'NASA, ESA, and the Hubble Heritage (STScI/AURA)-ESA/Hubble Collaboration',source:'https://science.nasa.gov/asset/hubble/hubble-captures-a-ring/'},
+  helix:{file:'img/nasa-helix.jpeg',credit:"NASA, ESA, C.R. O'Dell (Vanderbilt University), M. Meixner and P. McCullough (STScI)",source:'https://science.nasa.gov/asset/hubble/the-helix-nebula-a-gaseous-envelope-expelled-by-a-dying-star/'}
+};
+// Other nebula images remain camera-facing illustrations.
 const NEB_TEX = { orion:[['em1',2.2],['em2',1.5]], horsehead:[['horsehead',2.6]], pleiades:[['reflection',2.4]], crab:[['snr',2.3]], ring:[['ring',2.6]], helix:[['helix',2.5]],
   catseye:[['catseye',3.2]], eagle:[['eagle',2.3],['em3',1.6]], lagoon:[['em2',2.2],['em4',1.4]], trifid:[['trifid',2.4]], rosette:[['rosette',2.4]], northamerica:[['em3',2.2]],
   carina:[['em3',2.2],['em1',1.4]], tarantula:[['em4',2.2],['em3',1.5]] };
 const nebTexCache = {};
-const nebTex = n => nebTexCache[n] || (nebTexCache[n] = texLoader.load('img/neb-'+n+'.webp', t => { t.anisotropy=MAX_ANISO; }));
+const nebTex = n => nebTexCache[n] || (nebTexCache[n] = texLoader.load(NEB_PHOTO[n]?.file || 'img/neb-'+n+'.webp', t => { t.anisotropy=MAX_ANISO; }));
 const nebSprites = [];
-NEB.forEach(n => (NEB_TEX[n[0]]||[]).forEach(([t,f],i) => {
+NEB.forEach(n => (NEB_PHOTO[n[0]] ? [[n[0],2.6]] : NEB_TEX[n[0]]||[]).forEach(([t,f],i) => {
   const sp=new THREE.Sprite(new THREE.SpriteMaterial({ map:nebTex(t), blending:THREE.AdditiveBlending, transparent:true, depthWrite:false, opacity:i?0.7:1, rotation:i?rand()*Math.PI*2:0 }));
   sp.frustumCulled=false; scene.add(sp);
+  if (NEB_PHOTO[n[0]]){
+    // Fade only the display edges so rectangular photographs blend into space.
+    sp.material.onBeforeCompile = shader => { shader.fragmentShader=shader.fragmentShader.replace('#include <map_fragment>', '#include <map_fragment>\n diffuseColor.a *= smoothstep(0.0, 0.12, min(min(vUv.x, 1.0-vUv.x), min(vUv.y, 1.0-vUv.y)));'); };
+  }
   const off = i ? V(gauss(),gauss(),gauss()).normalize().multiplyScalar(0.25*n[5]) : V();
   nebSprites.push({ sp, P:n.pos.clone().add(off).multiplyScalar(LY), size:f*n[5]*LY });
 }));
@@ -2206,7 +2219,8 @@ const GRP_NAME = { sol:'Sun, Moon & planets', moons:'Moons', ast:'Asteroids & ce
 function renderResults(){
   const q=qEl.value.trim().toLowerCase();
   const terms=q.split(/\s+/).filter(Boolean);
-  shown = SEARCH.filter(it => { if (!q || it.name.toLowerCase().includes(q)) return true; const words=it.hay.split(/[\s·,()*’'-]+/); return terms.every(t => words.some(w => w.startsWith(t))); });
+  const rank=it=>{ const name=it.name.toLowerCase(); return name===q?0:name.startsWith(q)?1:name.includes(q)?2:3; };
+  shown = SEARCH.filter(it => { if (!q || it.name.toLowerCase().includes(q)) return true; const words=it.hay.split(/[\s·,()*’'-]+/); return terms.every(t => words.some(w => w.startsWith(t))); }).sort((a,b)=>rank(a)-rank(b));
   let html='', idx=0, lastKind='';
   for (const it of shown){
     if (it.grp!==lastKind){ html += `<li class="grp" role="presentation">${GRP_NAME[it.grp]}</li>`; lastKind=it.grp; }
@@ -2231,27 +2245,28 @@ qEl.addEventListener('keydown', e => {
   else if (e.key==='Enter'){ choose(shown[Math.max(0,active)]); e.preventDefault(); }
   else if (e.key==='Escape'){ qEl.value=''; closeResults(); qEl.blur(); }
 });
-resultsEl.addEventListener('pointerdown', e => { const li=e.target.closest('li[data-i]'); if (!li) return; e.preventDefault(); choose(shown[+li.dataset.i]); });
+resultsEl.addEventListener('pointerdown', e => { if (e.target.closest('li[data-i]')) e.preventDefault(); });
+resultsEl.addEventListener('click', e => { const li=e.target.closest('li[data-i]'); if (li) choose(shown[+li.dataset.i]); });
 
 // ---------- planet info ----------
 const infoEl=document.getElementById('info'), hudEl=document.getElementById('hud');
 let infoKey=null, infoZ='';
 function openInfo(k){
-  infoKey=k; infoZ=''; const b=BODY[k], img=window.PLANET_IMG && window.PLANET_IMG[k];
+  infoKey=k; infoZ=''; const b=BODY[k], photo=NEB_PHOTO[k.slice(2)], img=(window.PLANET_IMG && window.PLANET_IMG[k]) || (photo && {portrait:photo.file});
   infoEl.innerHTML = `<div class="top" data-drag><span class="grip" aria-hidden="true" title="Drag to move" style="margin-top:4px"></span><div style="flex:1;min-width:0"><p class="kind">${b.type}</p><h2>${b.name}</h2></div>
     <button class="closebtn" type="button" id="infoClose" aria-label="Close details"><svg viewBox="0 0 12 12" aria-hidden="true"><path d="M2 2l8 8M10 2l-8 8"/></svg></button></div>
-    ${img ? `<figure class="portrait"><button type="button" class="zoomimg" id="infoImg" aria-label="View ${b.name} image full size"><img src="${img.portrait}" alt="${b.name}"></button><figcaption>Image by Tony Parker (Ether), upscaled to 4K · tap to view full size</figcaption></figure>` : ''}
+    ${img ? `<figure class="portrait"><button type="button" class="zoomimg" id="infoImg" aria-label="View ${b.name} image full size"><img src="${img.portrait}" alt="${b.name}"></button><figcaption>${photo ? photo.credit+' · <a href="'+photo.source+'" target="_blank" rel="noopener">Telescope image and source</a>' : 'Image by Tony Parker (Ether), upscaled to 4K'} · tap to view full size</figcaption></figure>` : ''}
     <dl class="facts">${b.facts.map(f=>`<dt>${f[0]}</dt><dd>${f[1]}</dd>`).join('')}</dl>
     ${b.note ? `<p class="note">${b.note}</p>` : ''}
     <h3>For the date shown</h3><dl class="facts" id="infoLive"></dl>
     ${(b.group==='craft' || b.group==='moons') ? '' : `<h3>${k==='earth'?'The zodiac from Earth':'In the zodiac'}</h3><div id="infoZodiac"></div>`}`;
   infoEl.hidden=false; hudEl.classList.add('info-open'); applyPanel(infoEl);
   document.getElementById('infoClose').addEventListener('click', closeInfo);
-  const zi=document.getElementById('infoImg'); if (zi) zi.addEventListener('click', () => openViewer(img.portrait, b.name));
+  const zi=document.getElementById('infoImg'); if (zi) zi.addEventListener('click', () => openViewer(img.portrait, b.name, photo?.credit));
   updateInfoLive();
 }
 const viewer=document.getElementById('viewer');
-function openViewer(src, name){ viewer.querySelector('img').src=src; viewer.querySelector('img').alt=name; viewer.querySelector('figcaption').textContent=name+' · image by Tony Parker (Ether), upscaled to 3840 px'; viewer.hidden=false; viewer.querySelector('button').focus(); }
+function openViewer(src, name, credit){ viewer.querySelector('img').src=src; viewer.querySelector('img').alt=name; viewer.querySelector('figcaption').textContent=name+' · '+(credit || 'image by Tony Parker (Ether), upscaled to 3840 px'); viewer.hidden=false; viewer.querySelector('button').focus(); }
 viewer.addEventListener('click', e => { if (e.target===viewer || e.target.closest('button')) viewer.hidden=true; });
 infoEl.addEventListener('click', e => { const tb=e.target.closest('[data-tone]'); if (!tb) return; const key=tb.dataset.tone;
   if (toneNow && toneNow.key===key){ stopTone(); } else playTone(key); const on=!!(toneNow && toneNow.key===key); tb.setAttribute('aria-pressed',String(on)); const c=CHAKRA[key]; tb.textContent = on ? 'Stop the tone' : `Play the ${c[0].toLowerCase()} tone · ${c[1]} Hz`; });
@@ -2627,7 +2642,7 @@ function frame(now){
       if (o.orbit.visible){ o.orbit.material.opacity=0.45*oa; place(o.orbit, sys.P, o.a, d); mTmp.makeBasis(sys.e1, sys.e2, sys.pole); o.orbit.quaternion.setFromRotationMatrix(mTmp); } }
   }
   // nebula images and their distant glow
-  for (const n of nebSprites) place(n.sp, n.P, n.size, d);
+  for (const n of nebSprites){ place(n.sp, n.P, n.size, d); const im=n.sp.material.map.image; if (im?.width && im?.height) n.sp.scale.y *= im.height/im.width; }
   { const la=deep.geometry.attributes.lum.array; NEB.forEach((n,i) => { const Pm=tmpV.copy(n.pos).multiplyScalar(LY); const px=(2*n[5]*LY)/Math.max(1,camWorld.distanceTo(Pm))*pixPerRad; la[i]=deepBaseLum[i]*(1-smooth(3*DPR,12*DPR,px)); }); deep.geometry.attributes.lum.needsUpdate=true; }
   // spacecraft orbit circles
   { const oa = SHOW.orbits ? rangeAlpha([[3.8,8.6]], zoom) : 0;
