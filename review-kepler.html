@@ -1975,7 +1975,7 @@ AST.forEach(A => addLabel(A.name,'body', () => A.P, A.D>=200 ? [[9.6,13.2]] : [[
 DWARFS.forEach(dw => addLabel(dw.name,'body', () => dw.P, dw.k==='ceres' ? [[9.5,13.6]] : [[11.2,15.6]], { occlude:true, sizeR:dw.R, key:dw.k }));
 MOONS.forEach(m => addLabel(m[2],'body', () => m.P, [[Math.log10(m.a)-0.8, Math.log10(m.a)+2]], { occlude:true, sizeR:m.R, key:'m:'+m[1], within:() => eph.p[m[0]], maxDist:m.a*80 }));
 EXO.forEach(sys => {
-  sys.stars.filter(st=>st.key).forEach(st=>addLabel(st.name,'star',()=>st.P,[[-9,22]],{key:'x:'+st.key,sizeR:st.Rm,within:()=>sys.P,maxDist:sys.aMax*60}));
+  sys.stars.filter(st=>st.key).forEach(st=>addLabel(st.name,'star',()=>st.P,[[-9,22]],{key:'x:'+st.key,self:'x:'+st.key,occlude:true,sizeR:st.Rm,within:()=>sys.P,maxDist:sys.aMax*60}));
   if (sys.key!=='proxima' && sys.key!=='alphacen') addLabel(sys.name,'star', () => sys.P, [[15.7,19.4]], { key:'x:'+sys.key });
   sys.planets.forEach(o => addLabel(o.name,'body', () => o.P, [[-9,22]], { sizeR:o.R, key:'x:'+o.key, within:() => sys.P, maxDist:sys.aMax*60 }));
 });
@@ -2734,9 +2734,10 @@ function spinFrame(pole, angle, out){
 }
 const rangeAlpha = (ranges, z) => { let a=0; for (const [lo,hi] of ranges) a=Math.max(a, smooth(lo-0.25,lo+0.2,z)*(1-smooth(hi-0.2,hi+0.25,z))); return a; };
 const occluders = [{ c:()=>eph.moon, r:R_MOON, k:'moon' },{ c:()=>eph.earth, r:R_EARTH, k:'earth' },{ c:()=>eph.sun, r:R_SUN, k:'sun' }];
+EXO.forEach(sys=>sys.stars.filter(st=>st.key).forEach(st=>occluders.push({c:()=>st.P,r:st.Rm,k:'x:'+st.key,near:st.Rm*1000})));
 function occluded(P, self){
   tmpW.copy(P).sub(camWorld); const len=tmpW.length(); tmpW.divideScalar(len);
-  for (const o of occluders){ if (o.k===self) continue; const c=o.c(); tmpN.copy(c).sub(camWorld); const t=tmpN.dot(tmpW); if (t<0 || t>len) continue;
+  for (const o of occluders){ if (o.k===self) continue; const c=o.c(); if(o.near && camWorld.distanceTo(c)>o.near) continue; tmpN.copy(c).sub(camWorld); const t=tmpN.dot(tmpW); if (t<0 || t>len) continue;
     if (tmpN.lengthSq() - t*t < o.r*o.r*0.98) return true; }
   return false;
 }
