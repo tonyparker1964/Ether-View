@@ -122,6 +122,7 @@ body{background:var(--void);color:var(--ink);font-family:var(--f-ui);overflow:hi
 .info h2{margin:0;font:400 calc(30px*var(--fs))/1 var(--f-display)}
 .infozoom{display:flex;gap:6px;margin:10px 0 4px}.infozoom .btn{flex:1;display:inline-flex;align-items:center;justify-content:center;gap:6px;font-size:calc(12px*var(--fs));padding:7px 8px}.infozoom svg{width:10px;height:10px;fill:currentColor}
 .homebtn{width:100%;margin:2px 0 10px;height:34px;color:#ffe2b0;border-color:rgba(230,194,124,.4);background:linear-gradient(90deg,rgba(230,194,124,.1),rgba(230,194,124,.03))}
+.stopbtn[aria-pressed="true"]{color:#ff9a8a;border-color:rgba(255,140,120,.55);background:rgba(255,120,100,.12)}
 .closebtn{appearance:none;background:none;border:1px solid var(--line);color:var(--ink-dim);width:28px;height:28px;border-radius:7px;display:grid;place-items:center;cursor:pointer;flex:none}
 .closebtn:hover{color:var(--ink);background:rgba(255,255,255,.06)}
 .closebtn svg{width:12px;height:12px;stroke:currentColor;stroke-width:2;fill:none}
@@ -468,6 +469,7 @@ body{background:var(--void);color:var(--ink);font-family:var(--f-ui);overflow:hi
       <button class="btn" id="stepBack" type="button" aria-label="Step back one unit"><svg viewBox="0 0 12 12"><path d="M1 1.5h1.6v9H1zM11 1.5v9L3.6 6z"/></svg></button>
       <button class="btn" id="playBack" type="button" aria-label="Play backward"><svg viewBox="0 0 12 12"><path d="M9.5 1.5v9l-8-4.5z"/></svg></button>
       <button class="btn" id="play" type="button" aria-label="Pause"><svg viewBox="0 0 12 12" id="playIcon"><path d="M2 1.5h3v9H2zM7 1.5h3v9H7z"/></svg></button>
+      <button class="btn stopbtn" id="stopAll" type="button" aria-label="Stop all motion" aria-pressed="false" title="Stop: freezes time and every rotation until you press play"><svg viewBox="0 0 12 12"><path d="M2 2h8v8H2z"/></svg></button>
       <button class="btn" id="playFwd" type="button" aria-label="Play forward"><svg viewBox="0 0 12 12"><path d="M2.5 1.5v9l8-4.5z"/></svg></button>
       <button class="btn" id="stepFwd" type="button" aria-label="Step forward one unit"><svg viewBox="0 0 12 12"><path d="M9.4 1.5H11v9H9.4zM1 1.5v9L8.4 6z"/></svg></button>
       <button class="btn text" id="now" type="button">Now</button>
@@ -2397,14 +2399,16 @@ function refreshDateUI(){
   const note=eraNote(yrs); if (note!==lastEra){ lastEra=note; eraEl.textContent=note; eraEl.hidden=!note; }
 }
 const stepBtns = { back:document.getElementById('playBack'), fwd:document.getElementById('playFwd') };
-function setDir(d){ dir=d; if (d) lastPlayDir=d; refreshClockUI(); }
+let FROZEN=false, animMs=0;   // Stop freezes time and every animation until play is pressed
+function setDir(d){ dir=d; if (d){ lastPlayDir=d; FROZEN=false; } refreshClockUI(); }
 function togglePlay(){ setDir(dir===0 ? lastPlayDir : 0); }
 function setSpeed(){ refreshClockUI(); }
 function refreshClockUI(){ rateEl.textContent=fmtRate(); unitSel.value=String(unitIdx);
   playIcon.innerHTML = dir===0 ? '<path d="M2.5 1.5v9l8-4.5z"/>' : '<path d="M2 1.5h3v9H2zM7 1.5h3v9H7z"/>'; playBtn.setAttribute('aria-label', dir===0?'Play':'Pause');
-  stepBtns.back.setAttribute('aria-pressed', String(dir<0)); stepBtns.fwd.setAttribute('aria-pressed', String(dir>0)); }
+  stepBtns.back.setAttribute('aria-pressed', String(dir<0)); stepBtns.fwd.setAttribute('aria-pressed', String(dir>0)); document.getElementById('stopAll').setAttribute('aria-pressed', String(FROZEN)); }
 function stepTime(sg){ simTime = clamp(shiftTime(simTime, sg, unitIdx), TMIN, TMAX); updateEphemeris(simTime); updateSkyPanel(); refreshDateUI(); hideHint(); }
 playBtn.addEventListener('click', togglePlay);
+document.getElementById('stopAll').addEventListener('click', () => { FROZEN=true; setDir(0); });
 stepBtns.back.addEventListener('click', () => setDir(dir<0 ? 0 : -1));
 stepBtns.fwd.addEventListener('click', () => setDir(dir>0 ? 0 : 1));
 const goN=document.getElementById('goN'), goUnit=document.getElementById('goUnit'), goDir=document.getElementById('goDir');
@@ -3273,14 +3277,15 @@ document.getElementById('bangSound').addEventListener('click', e => { BANG.sound
 let last=performance.now(), hudT=0, skyT=0, loadingEl=document.getElementById('loading');
 function frame(now){
   const dt = Math.min(0.1, (now-last)/1000); last=now;
+  const adt = FROZEN ? 0 : dt; animMs += adt*1000; const anow = animMs;   // animations run on their own clock, which Stop freezes
   musicTick();
   if (!bangEl.hidden){ requestAnimationFrame(frame); return; }
-  simTime += dt*rateSec()*1000;
+  simTime += adt*rateSec()*1000;
   if (!isFinite(simTime)) simTime = Date.now();
   if (simTime > TMAX){ simTime=TMAX; if (dir>0) setDir(0); }
   if (simTime < TMIN){ simTime=TMIN; if (dir<0) setDir(0); }
-  if (SHOW.beltSwirl) beltDemoDays = (beltDemoDays + dt*25) % 7305000; asteroids.material.uniforms.uTw.value = (asteroids.material.uniforms.uTw.value + dt) % 6283.2;
-  updateEphemeris(simTime); updateDwarfs(eph.jd); updateAsteroids(eph.jd); updateCraft(simTime); if (SHOW.orbitsFast) orbitDemoDays += dt*0.35; updateMoonsExo(simTime);
+  if (SHOW.beltSwirl) beltDemoDays = (beltDemoDays + adt*25) % 7305000; asteroids.material.uniforms.uTw.value = (asteroids.material.uniforms.uTw.value + adt) % 6283.2;
+  updateEphemeris(simTime); updateDwarfs(eph.jd); updateAsteroids(eph.jd); updateCraft(simTime); if (SHOW.orbitsFast) orbitDemoDays += adt*0.35; updateMoonsExo(simTime);
 
   if (flight){
     flight.t+=dt; const u=clamp(flight.t/flight.dur,0,1); flight.u=u; flight.s=smooth(0.2,0.8,u);
@@ -3337,12 +3342,12 @@ function frame(now){
   sunGlow.position.copy(sunScene); sunGlow.scale.setScalar(Math.max(glowWorld,1)/d); sunGlow.visible = glowWorld>0;
 
   const hours = (simTime/3600000);
-  if (SHOW.spin) spinT += dt;
+  if (SHOW.spin) spinT += adt;
   { const hw=hours%20000, sp=SHOW.spin ? spinT : 0;
     SAT_U.uFlow.value = hw/6 + sp*0.35;                                       // band and cloud flow
     SAT_U.uK.value = (2*Math.PI*hw/7.0 + sp*0.9) % (2*Math.PI*7000);          // the innermost main ring laps Saturn in about 7 hours
     SAT_U.uSpoke.value = (2*Math.PI*hw/10.66 + sp*0.6) % (2*Math.PI);         // spokes ride Saturn's magnetic field
-    SAT_U.uSwirl.value = (hw*0.9 + sp*0.5) % 6283.18; SAT_U.uTime.value = now/1000; SAT_U.uPix.value = pixPerRad; { const yr=1970+simTime/YEAR_MS; SAT_U.uDec.value=smooth(2017,2023,yr); SAT_U.uDecPh.value=((simTime/86400000)*2*Math.PI/696)%(2*Math.PI); }
+    SAT_U.uSwirl.value = (hw*0.9 + sp*0.5) % 6283.18; SAT_U.uTime.value = anow/1000; SAT_U.uPix.value = pixPerRad; { const yr=1970+simTime/YEAR_MS; SAT_U.uDec.value=smooth(2017,2023,yr); SAT_U.uDecPh.value=((simTime/86400000)*2*Math.PI/696)%(2*Math.PI); }
     const sat=PLANETS.find(q=>q.k==='saturn'); if (sat){ const L=tmpV.copy(eph.sun).sub(eph.p.saturn).normalize(), q=sat.mesh.quaternion.clone().invert(); L.applyQuaternion(q);
       SAT_U.uSunR.value.set(L.x, -L.z, L.y); SAT_U.uSunL.value.set(L.x, L.y/0.902, L.z).normalize(); } }
   axisLines.forEach(l => l.visible = SHOW.axes);
@@ -3355,7 +3360,7 @@ function frame(now){
 
   // quantum strings
   { const sa = SHOW.strings ? (1 - SHOW.stringTrans/100) : 0;
-    if (sa>0.01){ updateStrings(now/1000, sa, zoom); QS.grp.visible=true; QS.grp.position.set(0,0,0); QS.grp.scale.setScalar(1); } else if (QS.built) QS.grp.visible=false; }
+    if (sa>0.01){ updateStrings(anow/1000, sa, zoom); QS.grp.visible=true; QS.grp.position.set(0,0,0); QS.grp.scale.setScalar(1); } else if (QS.built) QS.grp.visible=false; }
   // moons and other planetary systems
   for (const m of MOONS){
     if(camWorld.distanceTo(m.P)<m.R*600) loadVisibleBodyMap('m:'+m[1]); place(m.mesh, m.P, m.R, d); if(m.shape) m.mesh.scale.set(m.R/d*m.shape[0],m.R/d*m.shape[1],m.R/d*m.shape[2]); const toPar=tmpV.set(-Math.cos(m.th),0,0); toPar.copy(m.e1).multiplyScalar(-Math.cos(m.th)).addScaledVector(m.e2,-Math.sin(m.th)); orientBody(m.mesh, toPar, m.pole);
@@ -3386,9 +3391,9 @@ function frame(now){
     for (const c of [CRAFT.iss, CRAFT.hubble]){ c.orbit.visible = oa>0.01 && !!c.Ne; if (!c.orbit.visible) continue; c.orbit.material.opacity=0.45*oa; place(c.orbit, eph.earth, c.a, d); mTmp.makeBasis(c.Ne, c.Me, tmpN.copy(c.Ne).cross(c.Me)); c.orbit.quaternion.setFromRotationMatrix(mTmp); } }
   // black holes & spacecraft
   { const at = (SHOW.skySwirl && activeTarget()==='b:sgra') ? wEff : 0;
-    if (at>0.01) skySwirl += dt*0.05*at; else skySwirl *= Math.exp(-dt*1.2);
+    if (at>0.01) skySwirl += adt*0.05*at; else skySwirl *= Math.exp(-adt*1.2);
     swirlQ.setFromAxisAngle(gz, -skySwirl*1.2); galaxy.material.uniforms.uSwirl.value = skySwirl; }
-  BH.forEach(b => { place(b.group, b.P, b.Rs, d); b.ring.quaternion.copy(camera.quaternion); }); SGRA_U.uT.value=(now/1000)%3600;
+  BH.forEach(b => { place(b.group, b.P, b.Rs, d); b.ring.quaternion.copy(camera.quaternion); }); SGRA_U.uT.value=(anow/1000)%3600;
   for (const c of [CRAFT.iss, CRAFT.hubble]){ place(c.model, c.P, 1, d); const rh=tmpV.copy(c.P).sub(eph.earth).normalize(); mTmp.makeBasis(c.vel, c.nrm, rh); c.model.quaternion.setFromRotationMatrix(mTmp); }
   { const c=CRAFT.jwst; place(c.model, c.P, 1, d); const zz=tmpV.copy(c.P).sub(eph.sun).normalize(), xx=tmpW.copy(Z).cross(zz).normalize(), yy=tmpN.copy(zz).cross(xx); mTmp.makeBasis(xx,yy,zz); c.model.quaternion.setFromRotationMatrix(mTmp); }
 
