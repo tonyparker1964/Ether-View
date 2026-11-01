@@ -130,6 +130,16 @@ body{background:var(--void);color:var(--ink);font-family:var(--f-ui);overflow:hi
 .chatmsg.ether{align-self:flex-start;max-width:95%;background:rgba(230,194,124,.08);border:1px solid rgba(230,194,124,.22)}
 .chatmsg.ether.wait{color:var(--ink-dim);font-style:italic}
 .chatform{display:flex;gap:6px}.chatform input{flex:1;min-width:0;height:32px;padding:0 9px;border:1px solid var(--line);border-radius:7px;background:rgba(255,255,255,.04);color:var(--ink);font:400 calc(13px*var(--fs))/1 var(--f-ui)}
+.c3iplay{width:100%;margin:2px 0 8px;color:#bfe6ff;border-color:rgba(143,216,255,.45)}
+.c3itl{list-style:none;margin:0;padding:0;display:flex;flex-direction:column;gap:4px}
+.c3itl button{appearance:none;width:100%;text-align:left;display:grid;grid-template-columns:auto 1fr;gap:1px 10px;padding:6px 8px;border-radius:7px;border:1px solid transparent;background:none;color:var(--ink);cursor:pointer;font:inherit}
+.c3itl button:hover{background:rgba(255,255,255,.04)}
+.c3itl button.now{border-color:rgba(143,216,255,.5);background:rgba(143,216,255,.08)}
+.c3itl span{grid-row:span 2;font:500 calc(10.5px*var(--fs))/1.3 var(--f-mono);color:#8fd8ff;white-space:nowrap;padding-top:2px}
+.c3itl b{font:500 calc(13px*var(--fs))/1.3 var(--f-ui)}
+.c3itl small{font-size:calc(11.5px*var(--fs));line-height:1.4;color:var(--ink-dim)}
+#storyToast{position:fixed;left:50%;top:calc(106px + env(safe-area-inset-top,0px));transform:translateX(-50%);z-index:8;width:min(34rem,calc(100vw - 32px));padding:10px 14px;border-radius:10px;background:rgba(8,20,32,.86);border:1px solid rgba(143,216,255,.5);color:#d8efff;font:400 calc(12.5px*var(--fs))/1.45 var(--f-ui);pointer-events:none;box-shadow:0 0 24px rgba(120,200,255,.18)}
+#storyToast b{display:block;margin-bottom:2px;color:#9fdcff;font-weight:600;letter-spacing:.02em}
 #alignToast{position:fixed;left:50%;top:calc(64px + env(safe-area-inset-top,0px));transform:translateX(-50%);z-index:8;max-width:calc(100vw - 32px);padding:8px 14px;border-radius:999px;background:rgba(40,30,10,.82);border:1px solid rgba(255,210,120,.55);color:#ffe2a8;font:500 calc(12.5px*var(--fs))/1.3 var(--f-ui);letter-spacing:.03em;pointer-events:none;box-shadow:0 0 24px rgba(255,200,100,.25)}
 .closebtn{appearance:none;background:none;border:1px solid var(--line);color:var(--ink-dim);width:28px;height:28px;border-radius:7px;display:grid;place-items:center;cursor:pointer;flex:none}
 .closebtn:hover{color:var(--ink);background:rgba(255,255,255,.06)}
@@ -379,6 +389,7 @@ body{background:var(--void);color:var(--ink);font-family:var(--f-ui);overflow:hi
 
 
   <div id="alignToast" hidden role="status"></div>
+  <div id="storyToast" hidden role="status"></div>
   <section class="find panel" id="findPanel" aria-label="Search" data-drag>
     <span class="grip" aria-hidden="true" title="Drag to move"></span>
     <div class="search">
@@ -2153,6 +2164,30 @@ BODY['c:jwst'] = { name:'James Webb Space Telescope', ref:'Webb', R:14, type:'In
 BODY['c:3i'] = { name:'3I/ATLAS', ref:'3I/ATLAS', R:2800, view:6000, type:'Interstellar comet · the third object known from another star', group:'comet', P:C3I.P, alias:'3i atlas 3iatlas c/2025 n1 interstellar comet', tag:'Interstellar comet',
   facts:[['Discovered','1 July 2025, ATLAS survey, Río Hurtado, Chile'],['Also called','C/2025 N1'],['Perihelion','29 Oct 2025, 1.36 AU from the Sun'],['Eccentricity','6.14 (hyperbolic: it is not bound to the Sun)'],['Speed leaving','About 58 km/s'],['Tilt','175° (retrograde, close to the ecliptic)'],['Nucleus','Probably under 1 km across'],['Closest to Earth','1.80 AU, 19 Dec 2025'],['Passed Jupiter','0.36 AU, 16 Mar 2026']],
   note:'Only the third object ever seen passing through from another star system, after ʻOumuamua (2017) and 2I/Borisov (2019). It may be older than the Solar System. JWST found carbon dioxide, water and methane in its coma, and ESA’s JUICE imaged it near Jupiter in March 2026. Its path here uses real orbital elements; the close-up is Ether’s artwork, not to scale.' };
+// 3I/ATLAS's journey: each event lines up with its real position on the orbit above
+const C3I_TIMELINE = [
+  { t:'2025-07-01T06:00Z', title:'Discovery', z:12.0, text:'Found by the ATLAS survey telescope at Río Hurtado, Chile, 4.5 AU from the Sun. Hubble soon images it to size up the nucleus.' },
+  { t:'2025-08-06T12:00Z', title:'Webb reads its chemistry', z:12.0, text:'JWST finds a coma dominated by carbon dioxide, unlike most comets, and Gemini South photographs a growing tail.' },
+  { t:'2025-09-10T12:00Z', title:'Spacecraft join the watch', z:12.0, text:'Spacecraft across the solar system track it, including Psyche, STEREO and MAVEN.' },
+  { t:'2025-10-03T04:38Z', title:'Passing Mars', z:10.75, at:'mars', text:'Closest to Mars, 0.19 AU (29 million km). Mars Reconnaissance Orbiter photographs it, and Perseverance catches it from the Martian surface.' },
+  { t:'2025-10-29T11:45Z', title:'Perihelion', z:11.9, at:'sun', text:'Closest to the Sun, 1.36 AU, inside the orbit of Mars, under intense solar heating. From Earth it is hidden in the Sun’s glare.' },
+  { t:'2025-12-19T06:01Z', title:'Closest to Earth', z:12.15, at:'earth', text:'1.80 AU, about 167 million miles: a safe distance, as it re-emerges from the Sun’s glare.' },
+  { t:'2026-03-16T12:22Z', title:'Past Jupiter', z:11.4, at:'jupiter', text:'0.36 AU (54 million km) from Jupiter as it speeds out toward interstellar space; NASA’s Juno gathers observations, still being studied.' } ];
+C3I_TIMELINE.forEach(e => { e.ms=Date.parse(e.t); e.when=new Date(e.ms).toLocaleDateString('en-US',{ month:'short', day:'numeric', year:'numeric', timeZone:'UTC' }); });
+const c3iNow = () => { let i=-1; C3I_TIMELINE.forEach((e,j) => { if (simTime>=e.ms-12*3600e3) i=j; }); return i; };
+function c3iTimelineHTML(){ const n=c3iNow();
+  return `<h3>Its journey</h3><button type="button" class="btn text c3iplay" data-c3i="play">&#9654; Play the journey</button><ol class="c3itl">${C3I_TIMELINE.map((e,i) => `<li><button type="button" data-c3i="${i}" class="${i===n?'now':''}"><span>${e.when}</span><b>${e.title}</b><small>${e.text}</small></button></li>`).join('')}</ol>`; }
+function c3iGo(i){ const e=C3I_TIMELINE[i]; simTime=e.ms; FROZEN=false; setDir(0); updateEphemeris(simTime); updateComet(eph.jd); updateSkyPanel(); refreshDateUI();
+  startFlight({ target:'c:3i', w:1 }, e.z, 'lit'); }
+function c3iPlay(){ simTime=Date.parse('2025-06-20T00:00Z'); unitIdx=3; FROZEN=false; setDir(1); updateEphemeris(simTime); updateComet(eph.jd); updateSkyPanel(); refreshDateUI();
+  startFlight({ target:'c:3i', w:1 }, 12.15, 'lit'); }
+const storyToast = document.getElementById('storyToast'); let storyShown = -2;
+function updateC3iStory(){ // a caption for each event while the clock is within a few days of it and 3I/ATLAS is in view
+  const focus = activeTarget()==='c:3i' || infoKey==='c:3i'; let k=-1;
+  if (focus) C3I_TIMELINE.forEach((e,i) => { if (Math.abs(simTime-e.ms) < 4*86400e3) k=i; });
+  if (k!==storyShown){ storyShown=k; if (k<0) storyToast.hidden=true; else { const e=C3I_TIMELINE[k]; storyToast.innerHTML=`<b>${e.when} · ${e.title}</b>${e.text}`; storyToast.hidden=false; } }
+  if (infoKey==='c:3i'){ const n=c3iNow(); infoEl.querySelectorAll('.c3itl button').forEach((b,i) => b.classList.toggle('now', i===n)); }
+}
 AST.forEach(A => { BODY['a:'+A.k] = { name:A.name, ref:A.name, R:A.R, type:A.typ, group:'ast', P:A.P, alias:'asteroid '+A.typ+(A.k==='chiron'?' centaur':''), tag: A.k==='chiron' ? 'Centaur' : 'Asteroid',
   facts:[...A.facts, ['Orbit','a '+A.el[0]+' AU · e '+A.el[1]+' · tilt '+A.el[2]+'°']], note:A.note+(A.known ? '' : ' Its orbit’s size, shape and tilt are real; where it sits along the orbit is approximate.'),
   theme:A.theme, rules:'No traditional rulership', noSign:!A.known }; });
@@ -3017,6 +3052,7 @@ function openInfo(k){
     <h3>For the date shown</h3><dl class="facts" id="infoLive"></dl>
     <div class="infozoom" role="group" aria-label="Zoom on ${b.name}"><button type="button" class="btn" data-iz="in" aria-label="Zoom in on ${b.name}"><svg viewBox="0 0 12 12" aria-hidden="true"><path d="M5 1h2v4h4v2H7v4H5V7H1V5h4z"/></svg>Zoom in</button><button type="button" class="btn" data-iz="fit">Frame</button><button type="button" class="btn" data-iz="out" aria-label="Zoom out from ${b.name}"><svg viewBox="0 0 12 12" aria-hidden="true"><path d="M1 5h10v2H1z"/></svg>Zoom out</button></div>
     ${(b.group==='craft' || b.group==='moons' || b.group==='region') ? '' : `<h3>${k==='earth'?'The zodiac from Earth':'In the zodiac'}</h3><div id="infoZodiac"></div>`}`;
+  if (k==='c:3i') infoEl.querySelector('.facts').insertAdjacentHTML('afterend', c3iTimelineHTML());
   makePanelCollapsible(infoEl,'Planet details',true);
   infoEl.hidden=false; hudEl.classList.add('info-open'); applyPanel(infoEl);
   document.getElementById('infoClose').addEventListener('click', closeInfo);
@@ -3037,6 +3073,7 @@ function openInfo(k){
 const viewer=document.getElementById('viewer');
 function openViewer(src, name, credit){ viewer.querySelector('img').src=src; viewer.querySelector('img').alt=name; const download=document.getElementById('viewerDownload'); download.href=src; download.download=name.toLowerCase().replace(/[^a-z0-9]+/g,'-')+(src.startsWith('data:')?'-4k.jpg':'.'+src.split('.').pop()); viewer.querySelector('figcaption').textContent=name+' · '+(credit || 'image by Tony Parker (Ether), upscaled to 3840 px'); viewer.hidden=false; viewer.querySelector('button').focus(); }
 viewer.addEventListener('click', e => { if (e.target===viewer || e.target.closest('button')) viewer.hidden=true; });
+infoEl.addEventListener('click', e => { const c=e.target.closest('[data-c3i]'); if (c){ if (c.dataset.c3i==='play') c3iPlay(); else c3iGo(+c.dataset.c3i); } });
 infoEl.addEventListener('click', e => { const z=e.target.closest('[data-iz]'); if (!z || !infoKey) return; const k=infoKey;
   const dz = z.dataset.iz==='in' ? -0.5 : z.dataset.iz==='out' ? 0.5 : 0;
   if (flight && flight.toState.target===k){ flight.to = dz ? clamp(flight.to+dz, ZMIN, ZMAX) : targetZoom(k); return; }   // still flying there: adjust where it lands
@@ -3486,7 +3523,7 @@ function frame(now){
   if (simTime > TMAX){ simTime=TMAX; if (dir>0) setDir(0); }
   if (simTime < TMIN){ simTime=TMIN; if (dir<0) setDir(0); }
   if (SHOW.beltSwirl) beltDemoDays = (beltDemoDays + adt*25) % 7305000; asteroids.material.uniforms.uTw.value = (asteroids.material.uniforms.uTw.value + adt) % 6283.2;
-  updateEphemeris(simTime); updateAlign(adt); updateDwarfs(eph.jd); updateAsteroids(eph.jd); updateComet(eph.jd); updateCraft(simTime); if (SHOW.orbitsFast) orbitDemoDays += adt*0.35; updateMoonsExo(simTime);
+  updateEphemeris(simTime); updateAlign(adt); updateC3iStory(); updateDwarfs(eph.jd); updateAsteroids(eph.jd); updateComet(eph.jd); updateCraft(simTime); if (SHOW.orbitsFast) orbitDemoDays += adt*0.35; updateMoonsExo(simTime);
 
   if (flight){
     flight.t+=dt; const u=clamp(flight.t/flight.dur,0,1); flight.u=u; flight.s=smooth(0.2,0.8,u);
