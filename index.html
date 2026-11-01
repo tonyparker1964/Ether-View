@@ -494,11 +494,11 @@ body{background:var(--void);color:var(--ink);font-family:var(--f-ui);overflow:hi
       <p><b>Nebula images:</b> the nebulae and Pleiades use credited telescope observations, available in their details panels. Telescope colors combine selected filters and may show enhanced or assigned colors. Cloud depth is illustrative.</p>
       <p><b>Modeled stand-ins:</b> the close-up lunar terrain, where moons and exoplanets sit along their orbits, black-hole visuals, spacecraft models and orbit phases, background stars and the galaxy's individual particles.</p>
       <p><b>From Ether’s Field (Stellar Alignment):</b> the planet meanings, chakra tones, sky report, dwarf planets, Uranus’s rings and gold alignment glow. Moon surface map © 2010–2017 <a href="https://www.solarsystemscope.com/textures/" target="_blank" rel="noopener">Solar System Scope</a>, based on NASA imagery, used under CC BY 4.0. Uranus ring colors sampled from a NASA image (public domain). Meanings come from astrological and spiritual tradition, offered for reflection.</p>
-      <p><b>Image credits:</b> planet and Sun portraits, and the surface maps wrapped onto those globes, are your own images from Ether’s Field, upscaled to 4K. Each photo shows one face, so each globe's far side mirrors it. </p>
+      <p><b>Unique body images:</b> every moon, dwarf planet and exoplanet has its own surface map and full-size 3840 × 2160 3-D rendering. New maps are AI-generated artistic reconstructions (1774 × 887 source detail), not spacecraft photographs. Haumea, Makemake, Eris and all exoplanets have speculative geography. The existing lunar map is preserved. <a href="https://github.com/tonyparker1964/Ether-View/blob/main/IMAGE-AUDIT.md" target="_blank" rel="noopener">Image audit and provenance</a>.</p><p><b>Image credits:</b> planet and Sun portraits, and the surface maps wrapped onto those globes, are your own images from Ether’s Field, upscaled to 4K. Each photo shows one face, so each globe's far side mirrors it. </p>
     </section>
   </div>
 </div>
-<div id="viewer" hidden role="dialog" aria-label="Full-size image"><figure><img alt=""><figcaption></figcaption></figure><button type="button" class="closebtn" aria-label="Close full-size image"><svg viewBox="0 0 12 12" aria-hidden="true"><path d="M2 2l8 8M10 2l-8 8"/></svg></button></div>
+<div id="viewer" hidden role="dialog" aria-label="Full-size image"><figure><img alt=""><figcaption></figcaption><a id="viewerDownload" href="#" download>Download original image</a></figure><button type="button" class="closebtn" aria-label="Close full-size image"><svg viewBox="0 0 12 12" aria-hidden="true"><path d="M2 2l8 8M10 2l-8 8"/></svg></button></div>
 <div id="bang" hidden role="dialog" aria-label="The Big Bang simulation">
   <canvas id="bangCv"></canvas>
   <div id="bangFlash"></div>
@@ -981,6 +981,79 @@ PLANETS.forEach(p => {
 });
 
 // 4K surface maps built from the supplied images (4096 × 2048, far side mirrored from the photographed face)
+/* Unique body maps. Original major-planet portraits remain in PLANET_IMG. */
+const BODY_ART = Object.create(null);
+const bodyPortraitCache = new Map();
+let portraitRenderer;
+function bodyArtGeometry(key, width=128, height=64){
+  const g=new THREE.SphereGeometry(1,width,height);
+  if(key==='m:phobos' || key==='m:deimos'){
+    const p=g.attributes.position, seed=key==='m:phobos'?1:2.7;
+    for(let i=0;i<p.count;i++){
+      const x=p.getX(i),y=p.getY(i),z=p.getZ(i);
+      const f=1+.045*Math.sin(5*x+seed)*Math.sin(4*y+3*z)+.025*Math.cos(7*z-2*x+seed);
+      p.setXYZ(i,x*f,y*f,z*f);
+    }
+    g.computeVertexNormals();g.computeBoundingSphere();
+  }
+  return g;
+}
+function loadVisibleBodyMap(key){
+  const art=BODY_ART[key];
+  if(art && !art.requested){art.requested=true;ensureBodyMap(key).catch(()=>{});}
+}
+function registerBodyArt(key, mesh, shape) {
+  const slug=key.replace(/^[mx]:/,'');
+  const art=BODY_ART[key]={map:key==='moon'?'img/moon-map.jpg':`img/body-${slug}.jpg`,shape,mesh};
+  art.credit=key==='moon'?'4K 3-D render of the existing lunar map':
+    'AI-generated artistic reconstruction · 4K 3-D render (3840 × 2160); source texture 1774 × 887';
+  if(key.startsWith('x:')) art.credit+=' · surface and atmosphere are speculative';
+  else if(['haumea','makemake','eris'].includes(key)) art.credit+=' · detailed geography is unknown';
+  return art;
+}
+function ensureBodyMap(key){
+  const art=BODY_ART[key];
+  if(!art) return Promise.reject(new Error('No image for '+key));
+  if(art.pending) return art.pending;
+  art.pending=new Promise((resolve,reject)=>{
+    texLoader.load(art.map,t=>{
+      t.encoding=THREE.sRGBEncoding; t.anisotropy=MAX_ANISO;
+      t.minFilter=THREE.LinearFilter; t.generateMipmaps=false;
+      const mat=art.mesh.material; mat.map=t; mat.color.set(0xffffff);
+      if(key==='moon') mat.bumpMap=t;
+      mat.needsUpdate=true; art.texture=t; resolve(t);
+    },undefined,()=>{art.pending=null;reject(new Error('Image could not load'));});
+  });
+  return art.pending;
+}
+async function bodyPortrait(key){
+  if(bodyPortraitCache.has(key)) return bodyPortraitCache.get(key);
+  const art=BODY_ART[key], texture=await ensureBodyMap(key);
+  if(!portraitRenderer){
+    portraitRenderer=new THREE.WebGLRenderer({antialias:true,preserveDrawingBuffer:true});
+    portraitRenderer.setPixelRatio(1); portraitRenderer.setSize(3840,2160,false);
+    portraitRenderer.outputEncoding=THREE.sRGBEncoding;
+    portraitRenderer.setClearColor(0x020307,1);
+  }
+  const world=new THREE.Scene(), camera=new THREE.PerspectiveCamera(32,3840/2160,.1,30);
+  camera.position.set(0,.15,4.8); camera.lookAt(0,0,0);
+  world.add(new THREE.AmbientLight(0xd9e4ff,.32));
+  const sun=new THREE.DirectionalLight(0xfff5e5,2.25); sun.position.set(-3,2,4);world.add(sun);
+  const fill=new THREE.DirectionalLight(0x9abaff,.18);fill.position.set(3,0,-1);world.add(fill);
+  const geometry=bodyArtGeometry(key,192,96);
+  // A separate GPU texture is released after the snapshot; keep the explorer's map intact.
+  const portraitTexture=texture.clone();portraitTexture.needsUpdate=true;
+  const material=new THREE.MeshStandardMaterial({map:portraitTexture,roughness:.93,metalness:0});
+  const globe=new THREE.Mesh(geometry,material);globe.rotation.y=-Math.PI/2;
+  if(art.shape) globe.scale.fromArray(art.shape);
+  world.add(globe); portraitRenderer.render(world,camera);
+  const image=portraitRenderer.domElement.toDataURL('image/jpeg',.95);
+  geometry.dispose();material.dispose();portraitTexture.dispose();portraitRenderer.renderLists.dispose();
+  bodyPortraitCache.set(key,image);
+  if(bodyPortraitCache.size>4) bodyPortraitCache.delete(bodyPortraitCache.keys().next().value);
+  return image;
+}
+
 const texLoader = new THREE.TextureLoader();
 function loadMap(key, mesh){
   const src = window.PLANET_IMG && window.PLANET_IMG[key]; if (!src) return;
@@ -992,7 +1065,7 @@ setTimeout(() => {
   ei.onload = () => { const c=earthTex.map; c.getContext('2d').drawImage(ei, 0, 0, c.width, c.height); earth.material.map.needsUpdate=true; };
   ei.src = window.PLANET_IMG.earth.map;
 }, 300);
-texLoader.load('img/moon-map.jpg', t => { t.anisotropy=MAX_ANISO; moonMesh.material.map=t; moonMesh.material.bumpMap=t; moonMesh.material.needsUpdate=true; });
+registerBodyArt('moon',moonMesh); loadVisibleBodyMap('moon');
 addAxis(earth); addAxis(moonMesh); addAxis(sunMesh); PLANETS.forEach(p => addAxis(p.mesh));
 const SUN_POLE = radec(286.13, 63.87).normalize();
 // quantum strings: a vibrating web of light joining every cosmic body in this app. Each body has its own color;
@@ -1131,7 +1204,7 @@ const DWARFS = [
 ];
 function dwarfOrbit(dw, yr){ return { a:dw.a, e:dw.e, I:dw.I*DEG, O:dw.O*DEG, w:dw.w*DEG, M:((((yr-dw.tp)/Math.pow(dw.a,1.5))%1)+1)%1*Math.PI*2 }; }
 DWARFS.forEach(dw => {
-  dw.P=V(); dw.mesh=new THREE.Mesh(new THREE.SphereGeometry(1,48,24), new THREE.MeshStandardMaterial({ map:tex(moonTex.H), color:dw.col, roughness:0.95 })); scene.add(dw.mesh);
+  dw.P=V(); dw.mesh=new THREE.Mesh(bodyArtGeometry(dw.k), new THREE.MeshStandardMaterial({ color:dw.col, roughness:0.95 })); scene.add(dw.mesh); registerBodyArt(dw.k,dw.mesh,dw.shape);
   const o=dwarfOrbit(dw,2026), pts=[], v=V(); for (let i=0;i<=360;i++){ orbitXYZ(o, i/360*Math.PI*2, v); pts.push(v.x,v.y,v.z); }
   const g=new THREE.BufferGeometry(); g.setAttribute('position',new THREE.Float32BufferAttribute(pts,3));
   dw.orbit=new THREE.Line(g,new THREE.LineBasicMaterial({ color:0xa89a8a, transparent:true, opacity:0.32, depthWrite:false })); dw.orbit.userData.base=0.32; scene.add(dw.orbit);
@@ -1484,7 +1557,6 @@ function leoPos(c, altKm, incDeg, raan0, raanRate, phase, ms){
   c.nrm.copy(eq2ecl(N.clone().cross(M))); c.Ne=eq2ecl(N); c.Me=eq2ecl(M); c.a=a;
 }
 // major moons: real sizes, distances and periods, orbiting in their planet's equatorial plane
-const craterTex = tex(moonTex.H);
 const unitCircle = (() => { const pts=[]; for (let i=0;i<=128;i++){ const t=i/128*Math.PI*2; pts.push(Math.cos(t),Math.sin(t),0); } const g=new THREE.BufferGeometry(); g.setAttribute('position',new THREE.Float32BufferAttribute(pts,3)); return g; })();
 const MOONS = [ // parent, key, name, radius km, distance km, period days (negative = backward), color, note
   ['mars','phobos','Phobos',11.3,9376,0.3189,0x7d6f63,'The larger, inner moon of Mars, slowly spiraling inward.'],
@@ -1507,7 +1579,7 @@ const PNAME = { mars:'Mars', jupiter:'Jupiter', saturn:'Saturn', uranus:'Uranus'
 MOONS.forEach((m,i) => {
   const par = PLANETS.find(p=>p.k===m[0]); m.R=m[3]*1e3; m.a=m[4]*1e3; m.P=V(); m.pole=par.poleV;
   m.e1 = Math.abs(m.pole.z)<0.99 ? m.pole.clone().cross(Z).normalize() : X.clone(); m.e2 = m.pole.clone().cross(m.e1); m.phase = hash(i,7,3,1);
-  m.mesh = new THREE.Mesh(new THREE.SphereGeometry(1,48,24), new THREE.MeshStandardMaterial({ map:craterTex, color:m[6], roughness:0.95, metalness:0 })); scene.add(m.mesh);
+  m.mesh = new THREE.Mesh(bodyArtGeometry('m:'+m[1]), new THREE.MeshStandardMaterial({ color:m[6], roughness:0.95, metalness:0 })); scene.add(m.mesh); m.shape=m[1]==='phobos'?[1.2,.98,.8]:m[1]==='deimos'?[1.23,1,.9]:null; registerBodyArt('m:'+m[1],m.mesh,m.shape);
   m.orbit = new THREE.Line(unitCircle, new THREE.LineBasicMaterial({ color:0x9aa3bd, transparent:true, opacity:0.4, depthWrite:false })); m.orbit.frustumCulled=false; scene.add(m.orbit);
 });
 // other star systems, including double-sun (circumbinary) systems
@@ -1550,9 +1622,6 @@ const EXO = [
   { key:'alphacen', name:'Alpha Centauri AB', ra:219.90, dec:-60.834, ly:4.37, double:true, type:'Double sun · the nearest Sun-like stars', starsTxt:'Two Sun-like stars, circling each other every 80 years; Proxima Centauri is a distant third',
     binary:{ P:29200, a:23.5 }, stars:[{ R:1.22, M:1.08, col:0xfff3dc },{ R:0.86, M:0.91, col:0xffd9a8 }], alias:'rigil kentaurus', planets:[] }
 ];
-const hotJupiterTex = tex(bands(['#d89a62','#b8743f','#e6b27c','#a8663a','#d89a62']));
-const gasTex = tex(bands(['#c9b08a','#b49870','#ddc7a2','#a9906c','#c9b08a']));
-const iceTex = tex(bands(['#9fb6c8','#8aa2b6','#b4c8d6','#90a8bc']));
 EXO.forEach((sys,si) => {
   sys.dir = radec(sys.ra,sys.dec).normalize(); sys.P = sys.dir.clone().multiplyScalar(sys.ly*LY);
   sys.pole = sys.dir.clone().cross(Math.abs(sys.dir.z)<0.9?Z:X).normalize();  // orbits seen nearly edge-on from Earth, as transiting planets are
@@ -1568,8 +1637,8 @@ EXO.forEach((sys,si) => {
   });
   sys.aMax = Math.max(sys.binary ? sys.binary.a*1.5 : 0, ...sys.planets.map(p=>p[2]))*AU;
   sys.planets = sys.planets.map((pl,pi) => { const o={ key:pl[0], name:pl[1], a:pl[2]*AU, per:pl[3], R:pl[4]*R_EARTH, P:V(), phase:hash(si,pi,9,2), note:pl[6] };
-    const giant = pl[4]>6, map = pl[4]>10 && pl[2]<0.1 ? hotJupiterTex : giant ? gasTex : pl[4]>2.2 ? iceTex : craterTex;
-    o.mesh = new THREE.Mesh(new THREE.SphereGeometry(1,48,24), new THREE.MeshStandardMaterial({ map, color: map===craterTex ? pl[5] : 0xffffff, roughness:0.9 })); scene.add(o.mesh);
+    const giant = pl[4]>6;
+    o.mesh = new THREE.Mesh(bodyArtGeometry('x:'+o.key), new THREE.MeshStandardMaterial({ color:pl[5], roughness:0.9 })); scene.add(o.mesh); registerBodyArt('x:'+o.key,o.mesh);
     o.spinRate = giant ? 0.4 : 1;
     o.orbit = new THREE.Line(unitCircle, new THREE.LineBasicMaterial({ color:0xffb59a, transparent:true, opacity:0.4, depthWrite:false })); o.orbit.frustumCulled=false; scene.add(o.orbit);
     return o; });
@@ -2496,10 +2565,10 @@ resultsEl.addEventListener('click', e => { const li=e.target.closest('li[data-i]
 const infoEl=document.getElementById('info'), hudEl=document.getElementById('hud');
 let infoKey=null, infoZ='';
 function openInfo(k){
-  infoKey=k; infoZ=''; const b=BODY[k], photo=NEB_PHOTO[k.slice(2)], img=(window.PLANET_IMG && window.PLANET_IMG[k]) || (photo && {portrait:photo.file});
+  infoKey=k; infoZ=''; const b=BODY[k], art=BODY_ART[k], photo=NEB_PHOTO[k.slice(2)], img=(window.PLANET_IMG && window.PLANET_IMG[k]) || (photo && {portrait:photo.file}) || art;
   infoEl.innerHTML = `<div class="top" data-drag><span class="grip" aria-hidden="true" title="Drag to move" style="margin-top:4px"></span><div style="flex:1;min-width:0"><p class="kind">${b.type}</p><h2>${b.name}</h2></div>
     <button class="closebtn" type="button" id="infoClose" aria-label="Close details"><svg viewBox="0 0 12 12" aria-hidden="true"><path d="M2 2l8 8M10 2l-8 8"/></svg></button></div>
-    ${img ? `<figure class="portrait"><button type="button" class="zoomimg" id="infoImg" aria-label="View ${b.name} image full size"><img src="${img.portrait}" alt="${b.name}"></button><figcaption>${photo ? photo.credit+' · <a href="'+photo.source+'" target="_blank" rel="noopener">Telescope image and source</a>' : 'Image by Tony Parker (Ether), upscaled to 4K'} · tap to view full size</figcaption></figure>` : ''}
+    ${img ? `<figure class="portrait"><button type="button" class="zoomimg" id="infoImg" ${art?'disabled':''} aria-label="View ${b.name} image full size">${art?'<span role="status">Rendering unique 4K image…</span>':`<img src="${img.portrait}" alt="${b.name}">`}</button><figcaption>${art ? art.credit : photo ? photo.credit+' · <a href="'+photo.source+'" target="_blank" rel="noopener">Telescope image and source</a>' : 'Image by Tony Parker (Ether), upscaled to 4K'} · tap to view full size</figcaption></figure>` : ''}
     <dl class="facts">${b.facts.map(f=>`<dt>${f[0]}</dt><dd>${f[1]}</dd>`).join('')}</dl>
     ${b.note ? `<p class="note">${b.note}</p>` : ''}
     <h3>For the date shown</h3><dl class="facts" id="infoLive"></dl>
@@ -2507,11 +2576,22 @@ function openInfo(k){
   makePanelCollapsible(infoEl,'Planet details',true);
   infoEl.hidden=false; hudEl.classList.add('info-open'); applyPanel(infoEl);
   document.getElementById('infoClose').addEventListener('click', closeInfo);
-  const zi=document.getElementById('infoImg'); if (zi) zi.addEventListener('click', () => openViewer(img.portrait, b.name, photo?.credit));
+  const zi=document.getElementById('infoImg'); if (zi && !art) zi.addEventListener('click', () => openViewer(img.portrait, b.name, photo?.credit));
+  if(art) {
+    const showArt=()=>bodyPortrait(k).then(src=>{
+      if(infoKey!==k || !zi.isConnected) return;
+      zi.innerHTML='';const picture=new Image();picture.src=src;picture.alt=b.name;zi.appendChild(picture);
+      zi.disabled=false;zi.onclick=()=>openViewer(src,b.name,art.credit);
+    }).catch(()=>{
+      if(infoKey!==k || !zi.isConnected) return;
+      zi.textContent='Image unavailable · tap to retry';zi.disabled=false;zi.onclick=showArt;
+    });
+    showArt();
+  }
   updateInfoLive();
 }
 const viewer=document.getElementById('viewer');
-function openViewer(src, name, credit){ viewer.querySelector('img').src=src; viewer.querySelector('img').alt=name; viewer.querySelector('figcaption').textContent=name+' · '+(credit || 'image by Tony Parker (Ether), upscaled to 3840 px'); viewer.hidden=false; viewer.querySelector('button').focus(); }
+function openViewer(src, name, credit){ viewer.querySelector('img').src=src; viewer.querySelector('img').alt=name; const download=document.getElementById('viewerDownload'); download.href=src; download.download=name.toLowerCase().replace(/[^a-z0-9]+/g,'-')+(src.startsWith('data:')?'-4k.jpg':'.'+src.split('.').pop()); viewer.querySelector('figcaption').textContent=name+' · '+(credit || 'image by Tony Parker (Ether), upscaled to 3840 px'); viewer.hidden=false; viewer.querySelector('button').focus(); }
 viewer.addEventListener('click', e => { if (e.target===viewer || e.target.closest('button')) viewer.hidden=true; });
 infoEl.addEventListener('click', e => { const tb=e.target.closest('[data-tone]'); if (!tb) return; const key=tb.dataset.tone;
   if (toneNow && toneNow.key===key){ stopTone(); } else playTone(key); const on=!!(toneNow && toneNow.key===key); tb.setAttribute('aria-pressed',String(on)); const c=CHAKRA[key]; tb.textContent = on ? 'Stop the tone' : `Play the ${c[0].toLowerCase()} tone · ${c[1]} Hz`; });
@@ -2973,7 +3053,7 @@ function frame(now){
     if (sa>0.01){ updateStrings(now/1000, sa, zoom); QS.grp.visible=true; QS.grp.position.set(0,0,0); QS.grp.scale.setScalar(1); } else if (QS.built) QS.grp.visible=false; }
   // moons and other planetary systems
   for (const m of MOONS){
-    place(m.mesh, m.P, m.R, d); const toPar=tmpV.set(-Math.cos(m.th),0,0); toPar.copy(m.e1).multiplyScalar(-Math.cos(m.th)).addScaledVector(m.e2,-Math.sin(m.th)); orientBody(m.mesh, toPar, m.pole);
+    if(camWorld.distanceTo(m.P)<m.R*600) loadVisibleBodyMap('m:'+m[1]); place(m.mesh, m.P, m.R, d); if(m.shape) m.mesh.scale.set(m.R/d*m.shape[0],m.R/d*m.shape[1],m.R/d*m.shape[2]); const toPar=tmpV.set(-Math.cos(m.th),0,0); toPar.copy(m.e1).multiplyScalar(-Math.cos(m.th)).addScaledVector(m.e2,-Math.sin(m.th)); orientBody(m.mesh, toPar, m.pole);
     const near = camWorld.distanceTo(eph.p[m[0]]) < m.a*80, oa = SHOW.orbits && near ? rangeAlpha([[Math.log10(m.a)-0.9, Math.log10(m.a)+2.2]], zoom) : 0;
     m.orbit.visible=oa>0.01; if (m.orbit.visible){ m.orbit.material.opacity=0.4*oa; place(m.orbit, eph.p[m[0]], m.a, d); mTmp.makeBasis(m.e1, m.e2, m.pole); m.orbit.quaternion.setFromRotationMatrix(mTmp); }
     axisLines.length; }
@@ -2988,7 +3068,7 @@ function frame(now){
       st.light.position.copy(st.mesh.position); st.light.distance = 3*Math.max(sys.aMax,0.05*AU)/d;
       if (st.orbit && oa>0.01){ st.orbit.visible=true; st.orbit.material.opacity=0.35*oa; place(st.orbit, sys.P, st.r, d); mTmp.makeBasis(sys.e1, sys.e2, sys.pole); st.orbit.quaternion.setFromRotationMatrix(mTmp); }
     }
-    for (const o of sys.planets){ o.mesh.visible=true; place(o.mesh, o.P, o.R, d);
+    for (const o of sys.planets){ loadVisibleBodyMap('x:'+o.key); o.mesh.visible=true; place(o.mesh, o.P, o.R, d);
       orientBody(o.mesh, spinFrame(sys.pole, (SHOW.spin ? o.spinRate*spinT/24 : 0)*Math.PI*2 % (Math.PI*2), V()), sys.pole);   // each planet turns on its own axis
       o.orbit.visible=oa>0.01;
       if (o.orbit.visible){ o.orbit.material.opacity=0.45*oa; place(o.orbit, sys.P, o.a, d); mTmp.makeBasis(sys.e1, sys.e2, sys.pole); o.orbit.quaternion.setFromRotationMatrix(mTmp); } }
@@ -3012,7 +3092,7 @@ function frame(now){
   const orbA = SHOW.orbits ? rangeAlpha([[8.6,16]], zoom) : 0;
   orbits.forEach(o => { o.visible=orbA>0.01; place(o, eph.sun, AU, d); const gold=ALIGNED.has(o.userData.key); o.material.color.set(gold?0xffcf6a:o.userData.col); o.material.opacity=(gold?0.9:o.userData.base)*orbA; });
   DWARFS.forEach(dw => { dw.orbit.visible=orbA>0.01; place(dw.orbit, eph.sun, AU, d); dw.orbit.material.opacity=0.32*orbA;
-    place(dw.mesh, dw.P, dw.R, d); if (dw.shape){ const s=dw.R/d; dw.mesh.scale.set(s*dw.shape[0], s*dw.shape[1], s*dw.shape[2]); }
+    if(camWorld.distanceTo(dw.P)<dw.R*600) loadVisibleBodyMap(dw.k); place(dw.mesh, dw.P, dw.R, d); if (dw.shape){ const s=dw.R/d; dw.mesh.scale.set(s*dw.shape[0], s*dw.shape[1], s*dw.shape[2]); }
     orientBody(dw.mesh, spinFrame(Z, ((hours/dw.rot) + (SHOW.spin?spinT/24:0))*Math.PI*2 % (Math.PI*2), V()), Z); });
   { const ga = SHOW.grid ? rangeAlpha([[9.4,15.6]], zoom) : 0; eclGrid.visible=ga>0.01; eclGrid.material.opacity=0.22*ga; place(eclGrid, eph.sun, AU, d); }
   if (Math.abs(eph.jd-moonOrbitJD) > 0.5) refreshMoonOrbit(eph.jd);
@@ -3089,4 +3169,5 @@ setTimeout(() => { try { startExplorer(); } catch (err) { document.getElementByI
 
 </body>
 </html>
+
 
