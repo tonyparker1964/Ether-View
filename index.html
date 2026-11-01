@@ -141,6 +141,9 @@ body{background:var(--void);color:var(--ink);font-family:var(--f-ui);overflow:hi
 #storyToast{position:fixed;left:50%;top:calc(106px + env(safe-area-inset-top,0px));transform:translateX(-50%);z-index:8;width:min(34rem,calc(100vw - 32px));padding:10px 14px;border-radius:10px;background:rgba(8,20,32,.86);border:1px solid rgba(143,216,255,.5);color:#d8efff;font:400 calc(12.5px*var(--fs))/1.45 var(--f-ui);pointer-events:none;box-shadow:0 0 24px rgba(120,200,255,.18)}
 #storyToast b{display:block;margin-bottom:2px;color:#9fdcff;font-weight:600;letter-spacing:.02em}
 #alignToast{position:fixed;left:50%;top:calc(64px + env(safe-area-inset-top,0px));transform:translateX(-50%);z-index:8;max-width:calc(100vw - 32px);padding:8px 14px;border-radius:999px;background:rgba(40,30,10,.82);border:1px solid rgba(255,210,120,.55);color:#ffe2a8;font:500 calc(12.5px*var(--fs))/1.3 var(--f-ui);letter-spacing:.03em;pointer-events:none;box-shadow:0 0 24px rgba(255,200,100,.25)}
+.scats{display:flex;flex-wrap:wrap;gap:5px;padding:4px 4px 8px;border-bottom:1px solid var(--line);margin-bottom:4px;cursor:default!important;background:none!important}
+.scats .chip{padding:5px 9px;font-size:calc(11px*var(--fs))}
+.scats .chip[aria-pressed="true"]{color:#1a1206;background:var(--sun);border-color:var(--sun)}
 .closebtn{appearance:none;background:none;border:1px solid var(--line);color:var(--ink-dim);width:28px;height:28px;border-radius:7px;display:grid;place-items:center;cursor:pointer;flex:none}
 .closebtn:hover{color:var(--ink);background:rgba(255,255,255,.06)}
 .closebtn svg{width:12px;height:12px;stroke:currentColor;stroke-width:2;fill:none}
@@ -568,7 +571,7 @@ body{background:var(--void);color:var(--ink);font-family:var(--f-ui);overflow:hi
 <script>window.PLANET_IMG={earth:{portrait:'img/portrait-earth.webp',map:'img/map-earth.webp'},mercury:{portrait:'img/portrait-mercury.webp',map:'img/map-mercury.webp'},venus:{portrait:'img/portrait-venus.webp',map:'img/map-venus.webp'},mars:{portrait:'img/portrait-mars.webp',map:'img/map-mars.webp'},jupiter:{portrait:'img/portrait-jupiter.webp',map:'img/map-jupiter.webp'},saturn:{portrait:'img/portrait-saturn.webp',map:'img/map-saturn.webp'},uranus:{portrait:'img/portrait-uranus.webp',map:'img/map-uranus.webp'},neptune:{portrait:'img/portrait-neptune.webp',map:'img/map-neptune.webp'},pluto:{portrait:'img/portrait-pluto.webp',map:'img/map-pluto.webp'},sun:{portrait:'img/portrait-sun.webp',map:'img/map-sun.webp'}};</script>
 <script>window.PLANET_IMG['b:sgra']={portrait:'img/sgra-4k.jpg'};</script>
 <script>window.PLANET_IMG['c:3i']={portrait:'img/3i-atlas-4k.jpg'};</script>
-<script>'pallas juno vesta hygiea interamnia europa52 davida sylvia eunomia psyche iris hebe lutetia mathilde ida gaspra eros didymos itokawa ryugu bennu apophis phaethon cruithne hektor patroclus chiron'.split(' ').forEach(k => { window.PLANET_IMG['a:'+k]={ portrait:'img/ast-'+k+'.jpg', credit:'Image by Tony Parker (Ether)' }; });</script>
+<script>'pallas juno vesta hygiea interamnia europa52 davida sylvia eunomia psyche iris hebe lutetia mathilde ida gaspra eros didymos itokawa ryugu bennu apophis phaethon cruithne hektor patroclus chiron'.split(' ').forEach(k => { window.PLANET_IMG['a:'+k]={ portrait:'img/ast-'+k+'.jpg', credit:'Image by Tony Parker (Ether), upscaled to 4K' }; });</script>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
 <script>
 function startExplorer(){
@@ -1401,6 +1404,7 @@ const asteroids = (() => {
 })();
 // notable asteroids and centaurs with real orbits: a (AU), e, i, node, argument of perihelion
 // fix: how the position along the orbit is pinned to a real event ('opp' = at opposition on that date, 'near' = passing Earth, 'tp' = perihelion date, 'L4'/'L5' = Trojan point)
+const AST_SHAPE = {'pallas':1.14, 'juno':1.3, 'vesta':1.18, 'hygiea':1.07, 'interamnia':1.13, 'europa52':1.25, 'davida':1.35, 'sylvia':1.35, 'eunomia':1.52, 'psyche':1.33, 'iris':1.3, 'hebe':1.35, 'lutetia':1.44, 'mathilde':1.3, 'ida':1.77, 'gaspra':1.6, 'eros':2.23, 'didymos':1.31, 'itokawa':2.22, 'ryugu':1.12, 'bennu':1.12, 'apophis':1.4, 'phaethon':1.27, 'cruithne':1.51, 'hektor':1.75, 'patroclus':1.35, 'chiron':1.55};
 const AST = [
   { k:'pallas', name:'Pallas', el:[2.7725,.2302,34.93,172.9,310.9], D:512, col:0x8c8780, typ:'Asteroid · main belt', fix:null,
     facts:[['Diameter','About 512 km'],['Year','4.6 Earth years'],['Discovered','1802']], note:'The second asteroid ever found, on a steeply tilted orbit.', theme:'wisdom, strategy, pattern recognition and creative intelligence' },
@@ -1453,7 +1457,9 @@ AST.forEach((A,i) => {
   else { A.t0=2451545; A.M0=hash(i,3,5,7)*2*Math.PI; A.known=false; }
   // a lumpy rock shape: round for the big ones, irregular for the small ones
   const g=new THREE.SphereGeometry(1,40,20), pos=g.attributes.position, lump = A.D>300 ? 0.06 : A.D>100 ? 0.14 : 0.26;
-  for (let j=0;j<pos.count;j++){ const x=pos.getX(j), y=pos.getY(j), z=pos.getZ(j); const f=1+lump*(vnoise(x*2+i*7,y*2+z*1.7,40+i)*0.8+vnoise(x*5+i,y*5-z*3,50+i)*0.35); pos.setXYZ(j, x*f*(A.D<100?1.25:1), y*f, z*f*(A.D<100?0.85:1)); }
+  // proportions follow Ether's portrait of each rock, blended toward the real shape for the big, gravity-rounded ones
+  const el=AST_SHAPE[A.k]||1.2, sx=Math.sqrt(el), sz=1/Math.sqrt(el);
+  for (let j=0;j<pos.count;j++){ const x=pos.getX(j), y=pos.getY(j), z=pos.getZ(j); const f=1+lump*(vnoise(x*2+i*7,y*2+z*1.7,40+i)*0.8+vnoise(x*5+i,y*5-z*3,50+i)*0.35); pos.setXYZ(j, x*f*sx, y*f*(0.5+0.5*sz+0.04), z*f*sz); }
   g.computeVertexNormals();
   A.mesh=new THREE.Mesh(g, new THREE.MeshStandardMaterial({ map:craterTexA, color:A.col, roughness:0.95 })); scene.add(A.mesh);
   // the rock's own surface, from Ether's asteroid portraits
@@ -2188,6 +2194,9 @@ function updateC3iStory(){ // a caption for each event while the clock is within
   if (k!==storyShown){ storyShown=k; if (k<0) storyToast.hidden=true; else { const e=C3I_TIMELINE[k]; storyToast.innerHTML=`<b>${e.when} · ${e.title}</b>${e.text}`; storyToast.hidden=false; } }
   if (infoKey==='c:3i'){ const n=c3iNow(); infoEl.querySelectorAll('.c3itl button').forEach((b,i) => b.classList.toggle('now', i===n)); }
 }
+[['lmc','Large Magellanic Cloud',7000,'Dorado','Satellite galaxy of the Milky Way',[['Distance','About 160,000 ly'],['Size','About 14,000 ly across'],['Stars','About 30 billion'],['Home to','The Tarantula Nebula and Supernova 1987A']],'A dwarf galaxy orbiting our own, easy to see with the naked eye from the Southern Hemisphere.'],
+ ['smc','Small Magellanic Cloud',3500,'Tucana','Satellite galaxy of the Milky Way',[['Distance','About 200,000 ly'],['Size','About 7,000 ly across'],['Stars','A few hundred million'],['Named for','Ferdinand Magellan’s 1519–1522 voyage']],'The smaller companion of the Large Magellanic Cloud; the two are linked by a bridge of gas.']].forEach(([k,n,r,con,type,facts,note]) => {
+  const P=galPos(...GAL[k]); BODY['g:'+k] = { name:n, ref:'the '+n, R:r*LY, type, group:'gal', far:true, P, dir:P.clone().normalize(), con, alias:'galaxy magellanic dwarf galaxy', tag:'Galaxy', facts, note }; });
 AST.forEach(A => { BODY['a:'+A.k] = { name:A.name, ref:A.name, R:A.R, type:A.typ, group:'ast', P:A.P, alias:'asteroid '+A.typ+(A.k==='chiron'?' centaur':''), tag: A.k==='chiron' ? 'Centaur' : 'Asteroid',
   facts:[...A.facts, ['Orbit','a '+A.el[0]+' AU · e '+A.el[1]+' · tilt '+A.el[2]+'°']], note:A.note+(A.known ? '' : ' Its orbit’s size, shape and tilt are real; where it sits along the orbit is approximate.'),
   theme:A.theme, rules:'No traditional rulership', noSign:!A.known }; });
@@ -2989,24 +2998,38 @@ function updateSkyPanel(){
 // ---------- search ----------
 const qEl=document.getElementById('q'), resultsEl=document.getElementById('results');
 const SEARCH = [
-  ...['sol','moons','comet','ast','region','neb','bh','exo','craft'].flatMap(g => BODY_ORDER.filter(k => (BODY[k].group||'sol')===g).map(k => ({ kind:'body', grp:g, key:k, name:BODY[k].name,
+  { kind:'place', grp:'gal', stop:STOPS.find(s => s.label==='Milky Way'), name:'Milky Way', tag:'Galaxy · our home', hay:'milky way galaxy home spiral barred' },
+  ...['sol','moons','comet','ast','region','neb','bh','exo','gal','craft'].flatMap(g => BODY_ORDER.filter(k => (BODY[k].group||'sol')===g).map(k => ({ kind:'body', grp:g, key:k, name:BODY[k].name,
       tag: BODY[k].tag || (k==='sun'?'Star':k==='moon'?'Moon':k==='pluto'?'Dwarf planet':'Planet'), hay:(BODY[k].name+' '+(BODY[k].alias||'')).toLowerCase() }))),
   { kind:'bang', grp:'place', name:'The Big Bang', tag:'Simulation', hay:'big bang beginning origin universe start creation explosion inflation cosmic microwave background' },
   ...STOPS.map(s => ({ kind:'place', grp:'place', stop:s, name:s.label, tag:'Place', hay:(s.label+' '+(s.alias||'')).toLowerCase() }))
 ];
-let shown = [], active = -1;
-const GRP_NAME = { sol:'Sun, Moon & planets', moons:'Moons', comet:'Comets & interstellar objects', ast:'Asteroids & centaurs', region:'Belts & clouds', exo:'Star systems & their planets', neb:'Nebulae & clusters', bh:'Black holes', craft:'Spacecraft', place:'Places' };
+let shown = [], active = -1, catSel = 'all';
+const CATS = [['all','All'],['planets','Planets'],['suns','Suns & stars'],['moons','Moons'],['dwarfs','Dwarf planets'],['asteroids','Asteroids'],['comets','Comets'],['exo','Exoplanets'],['neb','Nebulae'],['bh','Black holes'],['gal','Galaxies'],['belts','Belts & clouds'],['craft','Spacecraft'],['places','Places']];
+function catOf(it){
+  if (it.grp==='gal') return 'gal';
+  if (it.kind!=='body') return 'places';
+  const b=BODY[it.key];
+  switch (it.grp){
+    case 'sol': return it.key==='sun' ? 'suns' : it.key==='moon' ? 'moons' : it.tag==='Dwarf planet' ? 'dwarfs' : 'planets';
+    case 'moons': return 'moons'; case 'comet': return 'comets'; case 'ast': return 'asteroids'; case 'region': return 'belts';
+    case 'neb': return 'neb'; case 'bh': return 'bh'; case 'craft': return 'craft';
+    case 'exo': return (b.sys || it.tag==='Star') ? 'suns' : 'exo';
+  } return 'places'; }
+SEARCH.forEach(it => { it.cat=catOf(it); });
+const GRP_NAME = { sol:'Sun, Moon & planets', moons:'Moons', comet:'Comets & interstellar objects', gal:'Galaxies', ast:'Asteroids & centaurs', region:'Belts & clouds', exo:'Star systems & their planets', neb:'Nebulae & clusters', bh:'Black holes', craft:'Spacecraft', place:'Places' };
 function renderResults(){
   const q=qEl.value.trim().toLowerCase().replace(/\s*\((?:star|planet)\)\s*$/,'');
   const terms=q.split(/\s+/).filter(Boolean);
   const rank=it=>{ const name=it.name.toLowerCase(); return name===q?0:name.startsWith(q)?1:name.includes(q)?2:3; };
   shown = SEARCH.filter(it => { if (!q || it.name.toLowerCase().includes(q) || it.name.toLowerCase().replace(/[-\s]/g,'').includes(q.replace(/[-\s]/g,''))) return true; const words=it.hay.split(/[\s·,()*’'-]+/); return terms.every(t => words.some(w => w.startsWith(t))); }).sort((a,b)=>rank(a)-rank(b));
-  let html='', idx=0, lastKind='';
+  if (catSel!=='all') shown = shown.filter(it => it.cat===catSel);
+  let html=`<li class="scats" role="presentation">${CATS.filter(([c]) => c==='all' || SEARCH.some(it => it.cat===c)).map(([c,n]) => `<button type="button" class="chip" data-cat="${c}" aria-pressed="${c===catSel}">${n}</button>`).join('')}</li>`, idx=0, lastKind='';
   for (const it of shown){
     if (it.grp!==lastKind){ html += `<li class="grp" role="presentation">${GRP_NAME[it.grp]}</li>`; lastKind=it.grp; }
     html += `<li role="option" id="opt${idx}" data-i="${idx}" aria-selected="${idx===active}"><span>${bodyDisplayName(it.key,it.name)}</span><small>${it.tag}</small></li>`; idx++;
   }
-  resultsEl.innerHTML = html || '<li class="none" role="presentation">No matches. Try a planet, a nebula, or “black hole”.</li>';
+  resultsEl.innerHTML = html + (shown.length ? '' : '<li class="none" role="presentation">No matches. Try a planet, a nebula, or “black hole”.</li>');
   resultsEl.hidden=false; qEl.setAttribute('aria-expanded','true');
   if (active>=0) qEl.setAttribute('aria-activedescendant','opt'+active); else qEl.removeAttribute('aria-activedescendant');
 }
@@ -3025,7 +3048,8 @@ qEl.addEventListener('keydown', e => {
   else if (e.key==='Enter'){ choose(shown[Math.max(0,active)]); e.preventDefault(); }
   else if (e.key==='Escape'){ qEl.value=''; closeResults(); qEl.blur(); }
 });
-resultsEl.addEventListener('pointerdown', e => { if (e.target.closest('li[data-i]')) e.preventDefault(); });
+resultsEl.addEventListener('pointerdown', e => { if (e.target.closest('li[data-i]') || e.target.closest('.scats')) e.preventDefault(); });
+resultsEl.addEventListener('click', e => { const c=e.target.closest('[data-cat]'); if (!c) return; catSel=c.dataset.cat; active=-1; renderResults(); resultsEl.scrollTop=0; qEl.focus(); });
 resultsEl.addEventListener('click', e => { const li=e.target.closest('li[data-i]'); if (li) choose(shown[+li.dataset.i]); });
 
 // ---------- planet info ----------

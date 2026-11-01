@@ -77,11 +77,12 @@ const unique=new Set();for(const [,id] of staticIds){assert(!unique.has(id),'dup
 vm.runInContext(`
 const qEl={value:'',setAttribute(){},removeAttribute(){}},resultsEl={innerHTML:'',hidden:true};
 const SEARCH=[{name:'Pluto',hay:'pluto dwarf planet charon',grp:'sol',tag:'Dwarf planet'},{name:'Charon',hay:'charon pluto moon',grp:'moons',tag:'Moon'},{name:'Davida',hay:'davida asteroid',grp:'ast',tag:'Asteroid'},{name:'Ida',hay:'ida asteroid',grp:'ast',tag:'Asteroid'}];
-const GRP_NAME={sol:'Planets',moons:'Moons',ast:'Asteroids'};let shown=[],active=0;
+const GRP_NAME={sol:'Planets',moons:'Moons',ast:'Asteroids'};let shown=[],active=0,catSel='all';const CATS=[['all','All']];
 ${fn('bodyDisplayName')}
 ${fn('renderResults')}
 for(const query of ['Charon','Ida','Pluto','Davida']){qEl.value=query;renderResults();assert.equal(shown[0].name,query,'exact-name priority');}
 qEl.value='not-an-object';renderResults();assert.equal(shown.length,0);
+catSel='ast';SEARCH.forEach(it=>it.cat=it.grp);qEl.value='';renderResults();assert.deepEqual(shown.map(it=>it.name),['Davida','Ida'],'category filter');
 `,ctx);
 console.log('PASS: inline JavaScript syntax; 72 orbital solutions; J2000 reference; 36 date-matched closed orbit paths; quantum endpoints, animation, reduced motion, finite geometry; unique static IDs.');
 console.log('PASS: exact-name search priority and empty search results.');
