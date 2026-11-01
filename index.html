@@ -243,8 +243,9 @@ body{background:var(--void);color:var(--ink);font-family:var(--f-ui);overflow:hi
 .namebtns .linkbtn{margin-top:0}
 .lbl.bh{color:#cbbcff;font-size:10.5px}
 .lbl.bh>span::before{width:6px;height:6px;background:#04050a;border:1.5px solid currentColor}
-.lbl.craft.live,.lbl.neb.live,.lbl.bh.live,.lbl.body.live{pointer-events:auto;cursor:pointer}
+.lbl.star.live[data-key],.lbl.craft.live,.lbl.neb.live,.lbl.bh.live,.lbl.body.live{pointer-events:auto;cursor:pointer}
 .lbl.live:hover{color:var(--sun)}
+.body-visits{display:grid;gap:6px;margin:10px 0}.body-visits p{margin:0 0 3px;font-size:12px;color:var(--ink-dim)}.body-visits button{text-align:left;justify-content:flex-start;padding:7px 10px;height:auto}
 .portrait{margin:12px 0 0;background:#000;border-radius:8px;overflow:hidden;border:1px solid var(--line)}
 .portrait img{display:block;width:100%;max-height:220px;object-fit:contain}
 .zoomimg{appearance:none;display:block;width:100%;padding:0;border:0;background:none;cursor:zoom-in}
@@ -1966,7 +1967,7 @@ EXO.forEach(sys => {
 // Individual Kepler-16 suns can be searched, selected, and inspected.
 EXO.forEach(sys=>sys.stars.filter(st=>st.key).forEach((st,i)=>{
   BODY['x:'+st.key]={name:st.name,ref:st.name,R:st.Rm,P:st.P,dir:sys.dir,group:'exo',far:true,con:'Cygnus',tag:'Star',
-    type:i?'M dwarf · cooler secondary star':'K dwarf · brighter primary star',alias:'Kepler-16 sun binary '+(i?'secondary red dwarf':'primary orange dwarf'),
+    type:i?'M dwarf · cooler secondary star':'K dwarf · brighter primary star',alias:st.name.replace(/\s/g,'')+' '+st.name.replace(/[-\s]/g,'')+' Kepler-16 sun binary '+(i?'secondary red dwarf':'primary orange dwarf'),
     facts:[['Radius',st.R+' × Sun'],['Mass',st.M+' × Sun'],['Temperature','Approximately '+st.T.toLocaleString('en-US')+' K'],['Binary period','About 41.08 days'],['Binary eccentricity','0.15944'],['Luminosity','Approximately '+st.luminosity.toFixed(4)+' × Sun']],
     note:'This star and its companion orbit their shared center of mass; Kepler-16b orbits both. Stellar sizes and the eccentric orbit use published system parameters. Orbit orientation and phase are illustrative, not an eclipse prediction. Surface and starspot patterns are artistic reconstructions.'};
 }));
@@ -1975,9 +1976,9 @@ AST.forEach(A => addLabel(A.name,'body', () => A.P, A.D>=200 ? [[9.6,13.2]] : [[
 DWARFS.forEach(dw => addLabel(dw.name,'body', () => dw.P, dw.k==='ceres' ? [[9.5,13.6]] : [[11.2,15.6]], { occlude:true, sizeR:dw.R, key:dw.k }));
 MOONS.forEach(m => addLabel(m[2],'body', () => m.P, [[Math.log10(m.a)-0.8, Math.log10(m.a)+2]], { occlude:true, sizeR:m.R, key:'m:'+m[1], within:() => eph.p[m[0]], maxDist:m.a*80 }));
 EXO.forEach(sys => {
-  sys.stars.filter(st=>st.key).forEach(st=>addLabel(st.name,'star',()=>st.P,[[-9,22]],{key:'x:'+st.key,self:'x:'+st.key,occlude:true,sizeR:st.Rm,within:()=>sys.P,maxDist:sys.aMax*60}));
+  sys.stars.filter(st=>st.key).forEach(st=>addLabel(st.name+' (star)','star',()=>st.P,[[-9,22]],{key:'x:'+st.key,self:'x:'+st.key,occlude:true,sizeR:st.Rm,within:()=>sys.P,maxDist:sys.aMax*60}));
   if (sys.key!=='proxima' && sys.key!=='alphacen') addLabel(sys.name,'star', () => sys.P, [[15.7,19.4]], { key:'x:'+sys.key });
-  sys.planets.forEach(o => addLabel(o.name,'body', () => o.P, [[-9,22]], { sizeR:o.R, key:'x:'+o.key, within:() => sys.P, maxDist:sys.aMax*60 }));
+  sys.planets.forEach(o => addLabel(o.name+(sys.key==='kepler16'?' (planet)':''),'body', () => o.P, [[-9,22]], { sizeR:o.R, key:'x:'+o.key, within:() => sys.P, maxDist:sys.aMax*60 }));
 });
 const SIGNS = ['Aries','Taurus','Gemini','Cancer','Leo','Virgo','Libra','Scorpio','Sagittarius','Capricorn','Aquarius','Pisces'];
 const SIGN_INFO = {
@@ -2583,14 +2584,14 @@ const SEARCH = [
 let shown = [], active = -1;
 const GRP_NAME = { sol:'Sun, Moon & planets', moons:'Moons', ast:'Asteroids & centaurs', exo:'Star systems & their planets', neb:'Nebulae & clusters', bh:'Black holes', craft:'Spacecraft', place:'Places' };
 function renderResults(){
-  const q=qEl.value.trim().toLowerCase();
+  const q=qEl.value.trim().toLowerCase().replace(/\s*\((?:star|planet)\)\s*$/,'');
   const terms=q.split(/\s+/).filter(Boolean);
   const rank=it=>{ const name=it.name.toLowerCase(); return name===q?0:name.startsWith(q)?1:name.includes(q)?2:3; };
-  shown = SEARCH.filter(it => { if (!q || it.name.toLowerCase().includes(q)) return true; const words=it.hay.split(/[\s·,()*’'-]+/); return terms.every(t => words.some(w => w.startsWith(t))); }).sort((a,b)=>rank(a)-rank(b));
+  shown = SEARCH.filter(it => { if (!q || it.name.toLowerCase().includes(q) || it.name.toLowerCase().replace(/[-\s]/g,'').includes(q.replace(/[-\s]/g,''))) return true; const words=it.hay.split(/[\s·,()*’'-]+/); return terms.every(t => words.some(w => w.startsWith(t))); }).sort((a,b)=>rank(a)-rank(b));
   let html='', idx=0, lastKind='';
   for (const it of shown){
     if (it.grp!==lastKind){ html += `<li class="grp" role="presentation">${GRP_NAME[it.grp]}</li>`; lastKind=it.grp; }
-    html += `<li role="option" id="opt${idx}" data-i="${idx}" aria-selected="${idx===active}"><span>${it.name}</span><small>${it.tag}</small></li>`; idx++;
+    html += `<li role="option" id="opt${idx}" data-i="${idx}" aria-selected="${idx===active}"><span>${bodyDisplayName(it.key,it.name)}</span><small>${it.tag}</small></li>`; idx++;
   }
   resultsEl.innerHTML = html || '<li class="none" role="presentation">No matches. Try a planet, a nebula, or “black hole”.</li>';
   resultsEl.hidden=false; qEl.setAttribute('aria-expanded','true');
@@ -2617,10 +2618,21 @@ resultsEl.addEventListener('click', e => { const li=e.target.closest('li[data-i]
 // ---------- planet info ----------
 const infoEl=document.getElementById('info'), hudEl=document.getElementById('hud');
 let infoKey=null, infoZ='';
+function bodyDisplayName(key,name){
+  if(key==='x:kepler16a' || key==='x:kepler16b') return name+' (star)';
+  if(key==='x:k16b') return name+' (planet)';
+  return name;
+}
+function keplerBodyLinks(key){
+  const bodies=['x:kepler16a','x:kepler16b','x:k16b'];
+  if(key!=='x:kepler16' && !bodies.includes(key)) return '';
+  return `<nav class="body-visits" aria-label="Kepler-16 objects"><p>A and B are the two stars; lowercase b is the planet.</p>${bodies.map(k=>`<button class="btn" type="button" data-visit-body="${k}" aria-label="Visit ${bodyDisplayName(k,BODY[k].name)}">${bodyDisplayName(k,BODY[k].name)}</button>`).join('')}</nav>`;
+}
 function openInfo(k){
   infoKey=k; infoZ=''; const b=BODY[k], art=BODY_ART[k], photo=NEB_PHOTO[k.slice(2)], img=(window.PLANET_IMG && window.PLANET_IMG[k]) || (photo && {portrait:photo.file}) || art;
   infoEl.innerHTML = `<div class="top" data-drag><span class="grip" aria-hidden="true" title="Drag to move" style="margin-top:4px"></span><div style="flex:1;min-width:0"><p class="kind">${b.type}</p><h2>${b.name}</h2></div>
     <button class="closebtn" type="button" id="infoClose" aria-label="Close details"><svg viewBox="0 0 12 12" aria-hidden="true"><path d="M2 2l8 8M10 2l-8 8"/></svg></button></div>
+    ${keplerBodyLinks(k)}
     ${img ? `<figure class="portrait"><button type="button" class="zoomimg" id="infoImg" ${art?'disabled':''} aria-label="View ${b.name} image full size">${art?'<span role="status">Rendering unique 4K image…</span>':`<img src="${img.portrait}" alt="${b.name}">`}</button><figcaption>${art ? art.credit : photo ? photo.credit+' · <a href="'+photo.source+'" target="_blank" rel="noopener">Telescope image and source</a>' : 'Image by Tony Parker (Ether), upscaled to 4K'} · tap to view full size</figcaption></figure>` : ''}
     <dl class="facts">${b.facts.map(f=>`<dt>${f[0]}</dt><dd>${f[1]}</dd>`).join('')}</dl>
     ${b.note ? `<p class="note">${b.note}</p>` : ''}
@@ -2646,7 +2658,7 @@ function openInfo(k){
 const viewer=document.getElementById('viewer');
 function openViewer(src, name, credit){ viewer.querySelector('img').src=src; viewer.querySelector('img').alt=name; const download=document.getElementById('viewerDownload'); download.href=src; download.download=name.toLowerCase().replace(/[^a-z0-9]+/g,'-')+(src.startsWith('data:')?'-4k.jpg':'.'+src.split('.').pop()); viewer.querySelector('figcaption').textContent=name+' · '+(credit || 'image by Tony Parker (Ether), upscaled to 3840 px'); viewer.hidden=false; viewer.querySelector('button').focus(); }
 viewer.addEventListener('click', e => { if (e.target===viewer || e.target.closest('button')) viewer.hidden=true; });
-infoEl.addEventListener('click', e => { const tb=e.target.closest('[data-tone]'); if (!tb) return; const key=tb.dataset.tone;
+infoEl.addEventListener('click', e => { const visit=e.target.closest('[data-visit-body]');if(visit){selectBody(visit.dataset.visitBody);return;} const tb=e.target.closest('[data-tone]'); if (!tb) return; const key=tb.dataset.tone;
   if (toneNow && toneNow.key===key){ stopTone(); } else playTone(key); const on=!!(toneNow && toneNow.key===key); tb.setAttribute('aria-pressed',String(on)); const c=CHAKRA[key]; tb.textContent = on ? 'Stop the tone' : `Play the ${c[0].toLowerCase()} tone · ${c[1]} Hz`; });
 function closeInfo(){ stopTone(); infoKey=null; infoEl.hidden=true; hudEl.classList.remove('info-open'); }
 const PHASES = ['New Moon','Waxing crescent','First quarter','Waxing gibbous','Full Moon','Waning gibbous','Last quarter','Waning crescent'];
@@ -2745,7 +2757,7 @@ const scr = { x:0, y:0 };
 function screenOf(P){ tmpV.copy(P).sub(F).divideScalar(lastD).applyMatrix4(camera.matrixWorldInverse); if (tmpV.z >= 0) return null; tmpV.applyMatrix4(camera.projectionMatrix); scr.x=(tmpV.x*0.5+0.5)*W; scr.y=(-tmpV.y*0.5+0.5)*H; return scr; }
 const labelVisible = key => labels.some(L => L.opt.key===key && L.shown);
 function pickAt(cx, cy){
-  let best=null, bs=1e9;
+  let best=null, bs=1e9, aggregate=null, aggregateScore=1e9;
   for (const k of BODY_ORDER){
     if (k==='moon' && patch.visible) continue;
     const P=bodyPos(k); if (!screenOf(P)) continue;
@@ -2754,9 +2766,10 @@ function pickAt(cx, cy){
     const rad = BODY[k].R/Math.max(1,camWorld.distanceTo(P))*pixPerRad/DPR;
     if (rad<6 && occluded(P,k)) continue;
     const lim=Math.max(16, rad), dd=Math.hypot(scr.x-cx, scr.y-cy);
+    if(BODY[k].sys){if(dd<lim && dd/lim<aggregateScore){aggregateScore=dd/lim;aggregate=k;}continue;}
     if (dd<lim && dd/lim<bs){ bs=dd/lim; best=k; }
   }
-  return best;
+  return best || aggregate;
 }
 let W=1, H=1, pixPerRad=800;
 function resize(){
