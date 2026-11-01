@@ -2194,15 +2194,29 @@ const C3I_TIMELINE = [
 C3I_TIMELINE.forEach(e => { if (e.t){ e.ms=Date.parse(e.t); e.when=new Date(e.ms).toLocaleDateString('en-US',{ month:'short', day:'numeric', year:'numeric', timeZone:'UTC' }); } else e.ms=c3iYr(e.y); });
 const c3iNow = () => { let i=-1; C3I_TIMELINE.forEach((e,j) => { if (simTime>=e.ms-12*3600e3) i=j; }); return i; };
 function c3iTimelineHTML(){ const n=c3iNow();
-  return `<h3>Its journey</h3><button type="button" class="btn text c3iplay" data-c3i="play">&#9654; Play the journey</button><ol class="c3itl">${C3I_TIMELINE.map((e,i) => `${i===0||C3I_TIMELINE[i-1].era!==e.era?`<li class="era">${e.era}</li>`:''}<li><button type="button" data-c3i="${i}" class="${i===n?'now':''}"><span>${e.when}</span><b>${e.title}</b><small>${e.text}</small></button></li>`).join('')}</ol>`; }
+  return `<h3>Its journey</h3><button type="button" class="btn text c3iplay" data-c3i="follow">&#9737; Follow her journey · 2015 to a million years</button><button type="button" class="btn text c3iplay" data-c3i="back">&#9664; Go back in time with her · to a million years ago</button><button type="button" class="btn text c3iplay" data-c3i="play">&#9654; Play her visit · 2025–26</button><ol class="c3itl">${C3I_TIMELINE.map((e,i) => `${i===0||C3I_TIMELINE[i-1].era!==e.era?`<li class="era">${e.era}</li>`:''}<li><button type="button" data-c3i="${i}" class="${i===n?'now':''}"><span>${e.when}</span><b>${e.title}</b><small>${e.text}</small></button></li>`).join('')}</ol>`; }
 function c3iGo(i){ const e=C3I_TIMELINE[i]; simTime=e.ms; FROZEN=false; setDir(0); updateEphemeris(simTime); updateComet(eph.jd); updateSkyPanel(); refreshDateUI();
   startFlight({ target:'c:3i', w:1 }, e.z, 'lit'); }
 function c3iPlay(){ simTime=Date.parse('2025-06-20T00:00Z'); unitIdx=3; FROZEN=false; setDir(1); updateEphemeris(simTime); updateComet(eph.jd); updateSkyPanel(); refreshDateUI();
   startFlight({ target:'c:3i', w:1 }, 12.15, 'lit'); }
 const storyToast = document.getElementById('storyToast'); let storyShown = -2;
+// Follow her journey: from 2015 to a million years ahead, with time speeding up as she gets farther away (so she
+// crosses the screen at a steady pace) and the camera pulling back with her
+let C3I_FOLLOW = null;
+function c3iFollow(back){ simTime = back ? Date.parse('2025-07-01T06:00Z') : c3iYr(2015.5); unitIdx=3; setDir(back?-1:1); updateEphemeris(simTime); updateComet(eph.jd); updateSkyPanel(); refreshDateUI();
+  C3I_FOLLOW = { off:0, setZ:null, dir: back?-1:1, end: back ? c3iYr(-998000.5) : c3iYr(1002026.5) }; startFlight({ target:'c:3i', w:1 }, Math.log10(C3I.r*AU*1.7), 'lit'); }
+const c3iFollowMsPerSec = () => 1.6*Math.max(C3I.r,1)*86400e3;   // about 5% of her distance per second
+function c3iFollowStep(){
+  if (!C3I_FOLLOW) return;
+  if ((simTime-C3I_FOLLOW.end)*C3I_FOLLOW.dir >= 0){ simTime=C3I_FOLLOW.end; C3I_FOLLOW=null; setDir(0); return; }
+  if (!flight){ const base=Math.log10(Math.max(C3I.r,1.2)*AU*1.7);
+    if (C3I_FOLLOW.setZ!==null && Math.abs(zoomTarget-C3I_FOLLOW.setZ)>1e-6) C3I_FOLLOW.off += zoomTarget-C3I_FOLLOW.setZ;   // keep the viewer's own zoom
+    zoomTarget = C3I_FOLLOW.setZ = clamp(base+C3I_FOLLOW.off, ZMIN, ZMAX); }
+  const r=c3iFollowMsPerSec()/86400e3; rateEl.textContent = (C3I_FOLLOW.dir<0 ? '◀ ' : '') + (r<365 ? `≈ ${Math.round(r)} days / s` : r<365e3 ? `≈ ${Math.round(r/365.25).toLocaleString()} years / s` : `≈ ${(r/365.25e3).toFixed(1)}k years / s`);
+}
 function updateC3iStory(){ // a caption for each event while the clock is within a few days of it and 3I/ATLAS is in view
   const focus = activeTarget()==='c:3i' || infoKey==='c:3i'; let k=-1;
-  if (focus) C3I_TIMELINE.forEach((e,i) => { const win = e.t ? 4*86400e3 : Math.max(4*86400e3, Math.abs(e.y-2025.8)*0.02*365.25*86400e3); if (Math.abs(simTime-e.ms) < win) k=i; });
+  if (focus) C3I_TIMELINE.forEach((e,i) => { const win = Math.max(e.t ? 4*86400e3 : Math.max(4*86400e3, Math.abs(e.y-2025.8)*0.02*365.25*86400e3), C3I_FOLLOW ? c3iFollowMsPerSec()*3.5 : 0); if (Math.abs(simTime-e.ms) < win) k=i; });
   if (k!==storyShown){ storyShown=k; if (k<0) storyToast.hidden=true; else { const e=C3I_TIMELINE[k]; storyToast.innerHTML=`<b>${e.when} · ${e.title}</b>${e.text}`; storyToast.hidden=false; } }
   if (infoKey==='c:3i'){ const n=c3iNow(); infoEl.querySelectorAll('.c3itl li:not(.era) button').forEach((b,i) => b.classList.toggle('now', i===n)); }
 }
@@ -2522,7 +2536,7 @@ function refreshDateUI(){
 }
 const stepBtns = { back:document.getElementById('playBack'), fwd:document.getElementById('playFwd') };
 let FROZEN=false, animMs=0;   // Stop freezes time and every animation until play is pressed
-function setDir(d){ dir=d; if (d){ lastPlayDir=d; FROZEN=false; } refreshClockUI(); }
+function setDir(d){ dir=d; if (d){ lastPlayDir=d; FROZEN=false; } if (typeof C3I_FOLLOW!=='undefined') C3I_FOLLOW=null; refreshClockUI(); }
 function togglePlay(){ setDir(dir===0 ? lastPlayDir : 0); }
 function setSpeed(){ refreshClockUI(); }
 function refreshClockUI(){ rateEl.textContent=fmtRate(); unitSel.value=String(unitIdx);
@@ -3109,7 +3123,7 @@ function openInfo(k){
 const viewer=document.getElementById('viewer');
 function openViewer(src, name, credit){ viewer.querySelector('img').src=src; viewer.querySelector('img').alt=name; const download=document.getElementById('viewerDownload'); download.href=src; download.download=name.toLowerCase().replace(/[^a-z0-9]+/g,'-')+(src.startsWith('data:')?'-4k.jpg':'.'+src.split('.').pop()); viewer.querySelector('figcaption').textContent=name+' · '+(credit || 'image by Tony Parker (Ether), upscaled to 3840 px'); viewer.hidden=false; viewer.querySelector('button').focus(); }
 viewer.addEventListener('click', e => { if (e.target===viewer || e.target.closest('button')) viewer.hidden=true; });
-infoEl.addEventListener('click', e => { const c=e.target.closest('[data-c3i]'); if (c){ if (c.dataset.c3i==='play') c3iPlay(); else c3iGo(+c.dataset.c3i); } });
+infoEl.addEventListener('click', e => { const c=e.target.closest('[data-c3i]'); if (c){ if (c.dataset.c3i==='play') c3iPlay(); else if (c.dataset.c3i==='follow') c3iFollow(false); else if (c.dataset.c3i==='back') c3iFollow(true); else c3iGo(+c.dataset.c3i); } });
 infoEl.addEventListener('click', e => { const z=e.target.closest('[data-iz]'); if (!z || !infoKey) return; const k=infoKey;
   const dz = z.dataset.iz==='in' ? -0.5 : z.dataset.iz==='out' ? 0.5 : 0;
   if (flight && flight.toState.target===k){ flight.to = dz ? clamp(flight.to+dz, ZMIN, ZMAX) : targetZoom(k); return; }   // still flying there: adjust where it lands
@@ -3554,12 +3568,12 @@ function frame(now){
   const adt = FROZEN ? 0 : dt; animMs += adt*1000; const anow = animMs;   // animations run on their own clock, which Stop freezes
   musicTick();
   if (!bangEl.hidden){ requestAnimationFrame(frame); return; }
-  simTime += adt*rateSec()*1000;
+  simTime += adt*((C3I_FOLLOW && dir) ? C3I_FOLLOW.dir*c3iFollowMsPerSec() : rateSec()*1000);
   if (!isFinite(simTime)) simTime = Date.now();
   if (simTime > TMAX){ simTime=TMAX; if (dir>0) setDir(0); }
   if (simTime < TMIN){ simTime=TMIN; if (dir<0) setDir(0); }
   if (SHOW.beltSwirl) beltDemoDays = (beltDemoDays + adt*25) % 7305000; asteroids.material.uniforms.uTw.value = (asteroids.material.uniforms.uTw.value + adt) % 6283.2;
-  updateEphemeris(simTime); updateAlign(adt); updateC3iStory(); updateDwarfs(eph.jd); updateAsteroids(eph.jd); updateComet(eph.jd); updateCraft(simTime); if (SHOW.orbitsFast) orbitDemoDays += adt*0.35; updateMoonsExo(simTime);
+  updateEphemeris(simTime); updateAlign(adt); updateC3iStory(); c3iFollowStep(); updateDwarfs(eph.jd); updateAsteroids(eph.jd); updateComet(eph.jd); updateCraft(simTime); if (SHOW.orbitsFast) orbitDemoDays += adt*0.35; updateMoonsExo(simTime);
 
   if (flight){
     flight.t+=dt; const u=clamp(flight.t/flight.dur,0,1); flight.u=u; flight.s=smooth(0.2,0.8,u);
