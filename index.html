@@ -452,7 +452,7 @@ body{background:var(--void);color:var(--ink);font-family:var(--f-ui);overflow:hi
       <p><b>Constellations</b> are drawn as they appear from the solar system and fade out as you leave it. <b>Planet spin</b> can run at real speed or sped up from the Layers panel.</p>
       <p><b>Computed for the date shown:</b> positions of the Sun, Moon and planets (approximate orbital elements, good to a fraction of a degree between 1800 and 2050 and increasingly approximate further out; beyond about 3,000 years the orbits are extrapolated from today’s, so deep-time positions are illustrative), the Moon's Earth-facing orientation, Earth's rotation, and the zodiac readings.</p>
       <p><b>Real catalog values:</b> the planet facts, named stars, nebulae and clusters, the Voyager directions, the Moon's named maria and craters, and the Milky Way's overall dimensions and arm layout.</p>
-      <p><b>Nebula images:</b> Horsehead, Eagle, Ring, Helix and Cat's Eye use credited telescope observations, available in their details panels. Other nebula images remain illustrations. Telescope colors combine selected filters and may show enhanced or assigned colors.</p>
+      <p><b>Nebula images:</b> the nebulae and Pleiades use credited telescope observations, available in their details panels. Telescope colors combine selected filters and may show enhanced or assigned colors. Cloud depth is illustrative.</p>
       <p><b>Modeled stand-ins:</b> the close-up lunar terrain, where moons and exoplanets sit along their orbits, black-hole visuals, spacecraft models and orbit phases, background stars and the galaxy's individual particles.</p>
       <p><b>From Ether’s Field (Stellar Alignment):</b> the planet meanings, chakra tones, sky report, dwarf planets, Uranus’s rings and gold alignment glow. Moon surface map © 2010–2017 <a href="https://www.solarsystemscope.com/textures/" target="_blank" rel="noopener">Solar System Scope</a>, based on NASA imagery, used under CC BY 4.0. Uranus ring colors sampled from a NASA image (public domain). Meanings come from astrological and spiritual tradition, offered for reflection.</p>
       <p><b>Image credits:</b> planet and Sun portraits, and the surface maps wrapped onto those globes, are your own images from Ether’s Field, upscaled to 4K. Each photo shows one face, so each globe's far side mirrors it. </p>
@@ -1220,6 +1220,15 @@ function buildNebulae(){ // illustrative 3D gas clouds around each catalog posit
 const nebulae = buildNebulae();
 // Observed telescope images replace the most schematic nebula illustrations.
 const NEB_PHOTO = {
+  orion:{file:'img/nasa-orion.jpeg',credit:'NASA, ESA, M. Robberto (STScI/ESA) and the Hubble Space Telescope Orion Treasury Project Team',source:'https://science.nasa.gov/asset/hubble/orion-nebula-2/'},
+  lagoon:{file:'img/nasa-lagoon.jpeg',credit:'NASA, ESA, and STScI',source:'https://science.nasa.gov/asset/hubble/lagoon-nebula-visible-light-view/'},
+  crab:{file:'img/nasa-crab.jpg',credit:'NASA, ESA, and the Hubble Heritage Team (STScI/AURA)',source:'https://science.nasa.gov/asset/hubble/crab-nebula-3/'},
+  trifid:{file:'img/nasa-trifid.jpg',credit:'NASA, ESA, STScI; Image Processing: Joseph DePasquale (STScI)',source:'https://science.nasa.gov/asset/hubble/trifid-nebula-wide-field-camera-3-image/'},
+  rosette:{file:'img/nasa-rosette.jpeg',credit:'NASA, ESA, STScI; Image Processing: Joseph DePasquale (STScI)',source:'https://science.nasa.gov/asset/hubble/dark-clouds-in-rosette-nebula/'},
+  carina:{file:'img/nasa-carina.jpeg',credit:'NOAO, AURA, NSF, and N. Smith (University of Arizona)',source:'https://science.nasa.gov/asset/hubble/carina-nebula/'},
+  tarantula:{file:'img/nasa-tarantula.jpg',credit:'NASA, ESA, CSA, STScI, Webb ERO Production Team',source:'https://science.nasa.gov/asset/webb/tarantula-nebula-nircam-image/'},
+  pleiades:{file:'img/nasa-pleiades.jpeg',credit:'NASA, ESA and AURA/Caltech',source:'https://science.nasa.gov/asset/hubble/hubble-refines-distance-to-the-pleiades-star-cluster/'},
+  northamerica:{file:'img/nasa-northamerica.jpg',credit:'NASA/JPL-Caltech',source:'https://science.nasa.gov/photojournal/the-case-of-the-disappearing-continent/'},
   catseye:{file:'img/nasa-catseye.jpg',credit:'NASA, ESA, and the Hubble Heritage Team (STScI/AURA)',source:'https://science.nasa.gov/asset/hubble/cats-eye-nebula/'},
   horsehead:{file:'img/nasa-horsehead.jpeg',credit:'NASA, NOAO, ESA and the Hubble Heritage Team (STScI/AURA); K. Noll, C. Luginbuhl, F. Hamilton',source:'https://science.nasa.gov/asset/hubble/the-horsehead-nebula/'},
   eagle:{file:'img/nasa-eagle.jpg',credit:'NASA, ESA, and the Hubble Heritage Team (STScI/AURA)',source:'https://science.nasa.gov/asset/hubble/eagle-nebula-pillars-of-creation/'},
