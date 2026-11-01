@@ -2835,7 +2835,7 @@ varying vec2 vUv; void main(){ vUv=uv; gl_Position=projectionMatrix*modelViewMat
 const AURAS = AL_KEYS.map((k,i) => { const U={ uT:{ value:0 }, uA:{ value:0 }, uSeed:{ value:i*3.17 } };
   const m=new THREE.Mesh(new THREE.PlaneGeometry(2,2), new THREE.ShaderMaterial({ uniforms:U, vertexShader:AURA_VS, fragmentShader:AURA_FS, transparent:true, depthWrite:false, blending:THREE.AdditiveBlending }));
   m.frustumCulled=false; m.visible=false; m.renderOrder=41; scene.add(m); return { k, m, U, a:0 }; });
-const alignToast = document.getElementById('alignToast'); let toastT = 0;
+const alignToast = document.getElementById('alignToast'); let toastT = 0, alignShown = '';
 let alignDt = 0;
 function updateAlign(adt){
   alignClock += adt; alignDt = adt;
@@ -2850,11 +2850,16 @@ function updateAlign(adt){
     const p=fresh[0], A=alName(AL_KEYS[p.i]), B=alName(AL_KEYS[p.j]);
     const rip = SUN_RIP.find(r => r.t<0) || SUN_RIP.reduce((a,b) => a.t>b.t ? a : b);
     rip.t=0; rip.R=Math.max(alPos(AL_KEYS[p.i]).distanceTo(eph.sun), alPos(AL_KEYS[p.j]).distanceTo(eph.sun))*1.12;
-    alignToast.textContent = p.opp ? `${A} and ${B} face each other across the Sun · ${p.d.toFixed(1)}°` : `${A} and ${B} line up with the Sun · ${p.d.toFixed(1)}°`;
-    alignToast.hidden=false; toastT=6;
   }
-  alignKey = key;
-  if (toastT>0){ toastT -= adt || 0.016; if (toastT<=0) alignToast.hidden=true; }
+  const keyWas = alignKey; alignKey = key;
+  // the gold notice stays up for as long as planets stay aligned, naming the closest pair, and breathes like Ether's Field's
+  const tNow=performance.now();
+  if (pairs.length && SHOW.alignPulse){
+    if (tNow-toastT>200 || key!==alignShown){ toastT=tNow; alignShown=key; const p=pairs[0], A=alName(AL_KEYS[p.i]), B=alName(AL_KEYS[p.j]);
+      const t = (p.opp ? `${A} and ${B} face each other across the Sun · ${p.d.toFixed(1)}°` : `${A} and ${B} line up with the Sun · ${p.d.toFixed(1)}°`) + (pairs.length>1 ? `  ·  +${pairs.length-1} more` : '');
+      if (alignToast.textContent!==t) alignToast.textContent=t; }
+    alignToast.hidden=false; alignToast.style.opacity = (0.62 + 0.38*(0.5-0.5*Math.cos(alignClock*Math.PI*2/10))).toFixed(3);
+  } else if (!alignToast.hidden) alignToast.hidden=true;
   for (const r of SUN_RIP) if (r.t>=0){ r.t += adt/5; if (r.t>1) r.t=-1; }
 }
 function drawAlign(d){
