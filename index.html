@@ -556,6 +556,7 @@ body{background:var(--void);color:var(--ink);font-family:var(--f-ui);overflow:hi
 
 <script>window.PLANET_IMG={earth:{portrait:'img/portrait-earth.webp',map:'img/map-earth.webp'},mercury:{portrait:'img/portrait-mercury.webp',map:'img/map-mercury.webp'},venus:{portrait:'img/portrait-venus.webp',map:'img/map-venus.webp'},mars:{portrait:'img/portrait-mars.webp',map:'img/map-mars.webp'},jupiter:{portrait:'img/portrait-jupiter.webp',map:'img/map-jupiter.webp'},saturn:{portrait:'img/portrait-saturn.webp',map:'img/map-saturn.webp'},uranus:{portrait:'img/portrait-uranus.webp',map:'img/map-uranus.webp'},neptune:{portrait:'img/portrait-neptune.webp',map:'img/map-neptune.webp'},pluto:{portrait:'img/portrait-pluto.webp',map:'img/map-pluto.webp'},sun:{portrait:'img/portrait-sun.webp',map:'img/map-sun.webp'}};</script>
 <script>window.PLANET_IMG['b:sgra']={portrait:'img/sgra-4k.jpg'};</script>
+<script>window.PLANET_IMG['c:3i']={portrait:'img/3i-atlas-4k.jpg'};</script>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
 <script>
 function startExplorer(){
@@ -1447,6 +1448,46 @@ AST.forEach((A,i) => {
   const og=new THREE.BufferGeometry(); og.setAttribute('position',new THREE.Float32BufferAttribute(pts,3));
   A.orbit=new THREE.Line(og,new THREE.LineBasicMaterial({ color:0xd8c4a0, transparent:true, opacity:0.5, depthWrite:false })); A.orbit.frustumCulled=false; A.orbit.visible=false; scene.add(A.orbit);
 });
+// ---------- 3I/ATLAS: the third interstellar object, on its real hyperbolic orbit (JPL/MPC elements, epoch 2026 Feb 19) ----------
+const C3I = { q:1.35645, e:6.14135, i:175.12*DEG, O:322.17*DEG, w:128.02*DEG, Tp:2460977.98958, P:V(), helio:V(), anti:V(), r:0 };
+C3I.a = C3I.q/(1-C3I.e); C3I.n = 0.01720209895/Math.pow(-C3I.a,1.5);
+function hyperXYZ(nu, r, out){ const u=C3I.w+nu, cO=Math.cos(C3I.O), sO=Math.sin(C3I.O), ci=Math.cos(C3I.i);
+  return out.set(r*(cO*Math.cos(u)-sO*Math.sin(u)*ci), r*(sO*Math.cos(u)+cO*Math.sin(u)*ci), r*Math.sin(u)*Math.sin(C3I.i)); }
+function updateComet(jd){
+  const M=C3I.n*(jd-C3I.Tp), e=C3I.e; let H=Math.asinh(M/e); for (let k=0;k<30;k++){ const f=e*Math.sinh(H)-H-M; H-=f/(e*Math.cosh(H)-1); if (Math.abs(f)<1e-12) break; }
+  const r=C3I.a*(1-e*Math.cosh(H)), nu=2*Math.atan(Math.sqrt((e+1)/(e-1))*Math.tanh(H/2)); C3I.r=r;
+  hyperXYZ(nu, r*AU, C3I.helio); C3I.P.copy(eph.sun).add(C3I.helio); C3I.anti.copy(C3I.helio).normalize();
+}
+const comet3i = (() => {
+  // the path: the part of the hyperbola within 60 AU of the Sun
+  const numax=Math.acos(-1/C3I.e), pts=[], v=V();
+  for (let k=0;k<=600;k++){ const nu=-numax+0.002+(2*numax-0.004)*k/600, r=C3I.a*(1-C3I.e*C3I.e)/(1+C3I.e*Math.cos(nu)); if (r>60 || r<0) continue; hyperXYZ(nu, r, v); pts.push(v.x,v.y,v.z); }
+  const og=new THREE.BufferGeometry(); og.setAttribute('position', new THREE.Float32BufferAttribute(pts,3));
+  const orbit=new THREE.Line(og, new THREE.LineBasicMaterial({ color:0x8fd8ff, transparent:true, opacity:0.5, depthWrite:false })); orbit.frustumCulled=false; scene.add(orbit);
+  // Ether's artwork of the comet, turned so its tails always stream away from the Sun
+  const U={ uMap:{ value:null }, uT:{ value:0 }, uReady:{ value:0 } };
+  new THREE.TextureLoader().load('img/3i-atlas-4k.jpg', t => { t.anisotropy=MAX_ANISO; U.uMap.value=t; U.uReady.value=1; });
+  const mat=new THREE.ShaderMaterial({ uniforms:U, transparent:true, depthWrite:false, side:THREE.DoubleSide,
+    vertexShader:`#include <common>
+#include <logdepthbuf_pars_vertex>
+varying vec2 vUv; void main(){ vUv=uv; gl_Position=projectionMatrix*modelViewMatrix*vec4(position,1.0);
+#include <logdepthbuf_vertex>
+}`,
+    fragmentShader:`#include <common>
+#include <logdepthbuf_pars_fragment>
+uniform sampler2D uMap; uniform float uT, uReady; varying vec2 vUv;
+void main(){
+#include <logdepthbuf_fragment>
+  vec3 c=texture2D(uMap,vUv).rgb; float l=max(c.r,max(c.g,c.b));
+  float jets=smoothstep(0.55,0.95,l)*(0.85+0.15*sin(uT*3.0+vUv.x*40.0+vUv.y*25.0));   // the ice jets and coma flicker as they vent
+  c*=mix(1.0,jets*1.25+0.2,smoothstep(0.55,0.95,l));
+  vec2 e=abs(vUv-0.5)*2.0; float frame=(1.0-smoothstep(0.7,1.0,e.x))*(1.0-smoothstep(0.6,1.0,e.y));
+  gl_FragColor=vec4(c, smoothstep(0.03,0.2,l)*frame*uReady);
+}` });
+  const art=new THREE.Mesh(new THREE.PlaneGeometry(1672/941,1), mat); art.frustumCulled=false; art.renderOrder=45; scene.add(art);
+  return { orbit, art, U };
+})();
+const C3I_ART_H = 5000;   // the artwork is drawn about 9 km across, larger than the real nucleus (likely under 1 km) so its icy jets read
 function updateAsteroids(jd){
   for (const A of AST){ const M=((A.M0 + A.n*(jd-A.t0))%(2*Math.PI)+2*Math.PI)%(2*Math.PI); orbitXYZ({...A.o, M}, keplerE(M,A.o.e), A.P).multiplyScalar(AU); }
   const d=jd-2451545+beltDemoDays, W=7305000; asteroids.material.uniforms.uDays.value = ((d%W)+W*1.5)%W - W/2;   // wraps every 20,000 years to keep GPU precision
@@ -1677,6 +1718,7 @@ void main(){
   float a=max(smoothstep(0.02,0.22,lum)*frame, shadow)*uReady;
   gl_FragColor=vec4(col, a);
 }`;
+const tmpQ = new THREE.Quaternion();
 const SGRA_U = { uMap:{ value:null }, uT:{ value:0 }, uReady:{ value:0 } };
 new THREE.TextureLoader().load('img/sgra-4k.jpg', t => { t.anisotropy=MAX_ANISO; t.wrapS=t.wrapT=THREE.ClampToEdgeWrapping; SGRA_U.uMap.value=t; SGRA_U.uReady.value=1; });
 BH.forEach(b => {
@@ -2047,7 +2089,7 @@ let spinT = 0;
 const camWorld = V(), F = V(), Fa = V(), Fb = V(), lastDir = V(1,0,0);
 const basis = { e1:V(), e2:V(), up:V(), n:V(), east:V(), north:V(), S:V() };
 
-updateEphemeris(simTime); updateDwarfs(eph.jd); updateAsteroids(eph.jd); updateCraft(simTime); updateMoonsExo(simTime);
+updateEphemeris(simTime); updateDwarfs(eph.jd); updateAsteroids(eph.jd); updateComet(eph.jd); updateCraft(simTime); updateMoonsExo(simTime);
 { // choose the sunlit landing site
   const sunDir = V().sub(eph.moon).normalize();
   let best=-2; for (const s of SITES){ const n=seleno(s.lat,s.lon,V()); const d=n.dot(sunDir); if (d>best){ best=d; site=s; } }
@@ -2105,6 +2147,9 @@ BODY['c:hubble'] = { name:'Hubble Space Telescope', ref:'Hubble', R:9, type:'Spa
 BODY['c:jwst'] = { name:'James Webb Space Telescope', ref:'Webb', R:14, type:'Infrared space telescope · Sun–Earth L2', group:'craft', P:CRAFT.jwst.P, alias:'jwst webb telescope l2', tag:'Spacecraft',
   facts:[['Distance from Earth','About 1.5 million km'],['Primary mirror','6.5 m, 18 gold segments'],['Sunshield','About 21 × 14 m'],['Launched','December 25, 2021']],
   note:'Webb loops around the L2 point, on the far side of Earth from the Sun; that halo orbit is simplified to the L2 point itself here.' };
+BODY['c:3i'] = { name:'3I/ATLAS', ref:'3I/ATLAS', R:2800, view:6000, type:'Interstellar comet · the third object known from another star', group:'comet', P:C3I.P, alias:'3i atlas 3iatlas c/2025 n1 interstellar comet', tag:'Interstellar comet',
+  facts:[['Discovered','1 July 2025, ATLAS survey, Río Hurtado, Chile'],['Also called','C/2025 N1'],['Perihelion','29 Oct 2025, 1.36 AU from the Sun'],['Eccentricity','6.14 (hyperbolic: it is not bound to the Sun)'],['Speed leaving','About 58 km/s'],['Tilt','175° (retrograde, close to the ecliptic)'],['Nucleus','Probably under 1 km across'],['Closest to Earth','1.80 AU, 19 Dec 2025'],['Passed Jupiter','0.36 AU, 16 Mar 2026']],
+  note:'Only the third object ever seen passing through from another star system, after ʻOumuamua (2017) and 2I/Borisov (2019). It may be older than the Solar System. JWST found carbon dioxide, water and methane in its coma, and ESA’s JUICE imaged it near Jupiter in March 2026. Its path here uses real orbital elements; the close-up is Ether’s artwork, not to scale.' };
 AST.forEach(A => { BODY['a:'+A.k] = { name:A.name, ref:A.name, R:A.R, type:A.typ, group:'ast', P:A.P, alias:'asteroid '+A.typ+(A.k==='chiron'?' centaur':''), tag: A.k==='chiron' ? 'Centaur' : 'Asteroid',
   facts:[...A.facts, ['Orbit','a '+A.el[0]+' AU · e '+A.el[1]+' · tilt '+A.el[2]+'°']], note:A.note+(A.known ? '' : ' Its orbit’s size, shape and tilt are real; where it sits along the orbit is approximate.'),
   theme:A.theme, rules:'No traditional rulership', noSign:!A.known }; });
@@ -2142,6 +2187,7 @@ const REGION_BODIES = {
 };
 Object.entries(REGION_BODIES).forEach(([k,r]) => { BODY[k] = Object.assign({ R:R_SUN, group:'region', P:eph.sun }, r); });
 const BODY_ORDER = Object.keys(BODY);
+addLabel('3I/ATLAS','body', () => C3I.P, [[6,14.6]], { sizeR:2800, key:'c:3i', cat:'asteroids' });
 AST.forEach(A => addLabel(A.name,'body', () => A.P, A.D>=200 ? [[9.6,13.2]] : [[6,13.2]], { sizeR:A.R, key:'a:'+A.k, cat:'asteroids', ...(A.D<200 ? { within:() => A.P, maxDist:0.35*AU } : {}) }));
 DWARFS.forEach(dw => addLabel(dw.name,'body', () => dw.P, dw.k==='ceres' ? [[9.5,13.6]] : [[11.2,15.6]], { occlude:true, sizeR:dw.R, key:dw.k }));
 MOONS.forEach(m => addLabel(m[2],'body', () => m.P, [[Math.log10(m.a)-0.8, Math.log10(m.a)+2]], { occlude:true, sizeR:m.R, key:'m:'+m[1], within:() => eph.p[m[0]], maxDist:m.a*80 }));
@@ -2750,10 +2796,49 @@ const alName = k => k==='emb' ? 'Earth' : BODY[k].name;
 const alPos = k => k==='emb' ? eph.earth : eph.p[k];
 const ringGeo = new THREE.RingGeometry(0.93, 1, 160);
 const mkRing = () => { const m=new THREE.Mesh(ringGeo, new THREE.MeshBasicMaterial({ color:0xffd27a, transparent:true, opacity:0, blending:THREE.AdditiveBlending, depthWrite:false, side:THREE.DoubleSide })); m.frustumCulled=false; m.visible=false; m.renderOrder=40; scene.add(m); return m; };
-const SUN_RIP = [0,1].map(() => ({ m:mkRing(), t:-1, R:0 })), BODY_PULSE = Array.from({ length:16 }, mkRing);
+const SUN_RIP = [0,1].map(() => ({ m:mkRing(), t:-1, R:0 }));
+// Each aligned world breathes like Ether's Field's meditative Breath mode: seven wavering rings that swell on the inhale at
+// six breaths a minute, a warm core, and motes of light drifting outward, all in alignment gold.
+const AURA_FS = `#include <common>
+#include <logdepthbuf_pars_fragment>
+uniform float uT, uA, uSeed; varying vec2 vUv;
+` + NOISE_GLSL + `
+void main(){
+#include <logdepthbuf_fragment>
+  vec2 q=vUv*2.0-1.0; float len=length(q), a=atan(q.y,q.x);
+  float v=0.5-0.5*cos(uT*6.2831853/10.0);                  // 6 breaths a minute, as in Ether's Field
+  float z=uT*0.3+uSeed, R=0.34*(1.0+0.35*v);
+  vec3 col=vec3(0.0);
+  for (int l=6; l>=0; l--){ float fl=float(l);
+    float rr=R*(1.0+fl*0.16), wob=0.08+fl*0.02;
+    float nn=vn(vec2(cos(a),sin(a))*1.4+vec2(fl*0.3+z, fl*0.15-z*0.6))*2.0-1.0;
+    float rl=rr*(1.0+nn*wob);
+    float line=exp(-pow((len-rl)/(0.008+0.002*fl),2.0));
+    vec3 hue=mix(vec3(1.0,0.84,0.45), vec3(1.0,0.6,0.42), fl/6.0);
+    col+=hue*line*(0.35+0.3*(6.0-fl)/6.0)*(0.75+0.5*v);
+  }
+  col+=vec3(1.0,0.8,0.45)*exp(-pow(len/(R*1.3),2.0)*2.2)*(0.22+0.22*v);   // the warm core
+  for (int i=0;i<36;i++){ float fi=float(i);                              // motes drifting outward
+    float h1=fract(sin(fi*12.9898+uSeed)*43758.5453), h2=fract(sin(fi*78.233+uSeed)*12543.123);
+    float life=fract(uT*0.07*(0.6+h2)+h1), ang=h1*6.2831853+(vn(vec2(h1*9.0,z))-0.5)*0.8;
+    vec2 mp=vec2(cos(ang),sin(ang))*(R*1.05+life*0.62);
+    col+=vec3(1.0,0.86,0.55)*exp(-dot(q-mp,q-mp)/0.00012)*(1.0-life)*0.9;
+  }
+  float edge=1.0-smoothstep(0.86,1.0,len);
+  gl_FragColor=vec4(col*uA*edge, 1.0);
+}`;
+const AURA_VS = `#include <common>
+#include <logdepthbuf_pars_vertex>
+varying vec2 vUv; void main(){ vUv=uv; gl_Position=projectionMatrix*modelViewMatrix*vec4(position,1.0);
+#include <logdepthbuf_vertex>
+}`;
+const AURAS = AL_KEYS.map((k,i) => { const U={ uT:{ value:0 }, uA:{ value:0 }, uSeed:{ value:i*3.17 } };
+  const m=new THREE.Mesh(new THREE.PlaneGeometry(2,2), new THREE.ShaderMaterial({ uniforms:U, vertexShader:AURA_VS, fragmentShader:AURA_FS, transparent:true, depthWrite:false, blending:THREE.AdditiveBlending }));
+  m.frustumCulled=false; m.visible=false; m.renderOrder=41; scene.add(m); return { k, m, U, a:0 }; });
 const alignToast = document.getElementById('alignToast'); let toastT = 0;
+let alignDt = 0;
 function updateAlign(adt){
-  alignClock += adt;
+  alignClock += adt; alignDt = adt;
   const lon = AL_KEYS.map(k => { const P=alPos(k); return Math.atan2(P.y-eph.sun.y, P.x-eph.sun.x); }), pairs=[];
   for (let i=0;i<8;i++) for (let j=i+1;j<8;j++){ let dd=Math.abs(lon[i]-lon[j])%(2*Math.PI); if (dd>Math.PI) dd=2*Math.PI-dd; dd/=DEG;
     if (dd<AL_ORB) pairs.push({ i, j, d:dd, opp:false }); else if (180-dd<AL_ORB) pairs.push({ i, j, d:180-dd, opp:true }); }
@@ -2775,11 +2860,11 @@ function updateAlign(adt){
 function drawAlign(d){
   for (const r of SUN_RIP){ const on = r.t>=0 && SHOW.alignPulse; r.m.visible=on; if (!on) continue;
     const e=1-Math.pow(1-r.t,3); place(r.m, eph.sun, Math.max(r.R*e, 0.05*AU), d); r.m.quaternion.identity(); r.m.material.opacity=0.85*(1-r.t); }
-  let n=0;
-  if (SHOW.alignPulse) for (const k of ALIGN2){ const P=alPos(k), R=k==='emb'?R_EARTH:BODY[k].R, base=Math.max(R*2.6, camWorld.distanceTo(P)*0.018);
-    for (let j=0;j<2 && n<BODY_PULSE.length;j++,n++){ const m=BODY_PULSE[n], ph=(alignClock*0.55 + j*0.5)%1;
-      m.visible=true; place(m, P, base*(1+1.6*ph), d); m.quaternion.copy(camera.quaternion); m.material.opacity=0.75*(1-ph)*(1-ph); } }
-  for (;n<BODY_PULSE.length;n++) BODY_PULSE[n].visible=false;
+  for (const au of AURAS){ const want = SHOW.alignPulse && ALIGN2.has(au.k) ? 1 : 0;
+    au.a += (want-au.a)*Math.min(1, alignDt*1.5);   // ease in and out over a breath or so
+    au.m.visible = au.a>0.01; if (!au.m.visible) continue;
+    const P=alPos(au.k), R=au.k==='emb'?R_EARTH:BODY[au.k].R, base=Math.max(R*3.2, camWorld.distanceTo(P)*0.03);
+    place(au.m, P, base, d); au.m.quaternion.copy(camera.quaternion); au.U.uT.value=alignClock; au.U.uA.value=au.a; }
 }
 const PL_NAME = { mercury:'Mercury', venus:'Venus', mars:'Mars', jupiter:'Jupiter', saturn:'Saturn', uranus:'Uranus', neptune:'Neptune', moon:'Moon' };
 function skyReport(){
@@ -2861,13 +2946,13 @@ function updateSkyPanel(){
 // ---------- search ----------
 const qEl=document.getElementById('q'), resultsEl=document.getElementById('results');
 const SEARCH = [
-  ...['sol','moons','ast','region','neb','bh','exo','craft'].flatMap(g => BODY_ORDER.filter(k => (BODY[k].group||'sol')===g).map(k => ({ kind:'body', grp:g, key:k, name:BODY[k].name,
+  ...['sol','moons','comet','ast','region','neb','bh','exo','craft'].flatMap(g => BODY_ORDER.filter(k => (BODY[k].group||'sol')===g).map(k => ({ kind:'body', grp:g, key:k, name:BODY[k].name,
       tag: BODY[k].tag || (k==='sun'?'Star':k==='moon'?'Moon':k==='pluto'?'Dwarf planet':'Planet'), hay:(BODY[k].name+' '+(BODY[k].alias||'')).toLowerCase() }))),
   { kind:'bang', grp:'place', name:'The Big Bang', tag:'Simulation', hay:'big bang beginning origin universe start creation explosion inflation cosmic microwave background' },
   ...STOPS.map(s => ({ kind:'place', grp:'place', stop:s, name:s.label, tag:'Place', hay:(s.label+' '+(s.alias||'')).toLowerCase() }))
 ];
 let shown = [], active = -1;
-const GRP_NAME = { sol:'Sun, Moon & planets', moons:'Moons', ast:'Asteroids & centaurs', region:'Belts & clouds', exo:'Star systems & their planets', neb:'Nebulae & clusters', bh:'Black holes', craft:'Spacecraft', place:'Places' };
+const GRP_NAME = { sol:'Sun, Moon & planets', moons:'Moons', comet:'Comets & interstellar objects', ast:'Asteroids & centaurs', region:'Belts & clouds', exo:'Star systems & their planets', neb:'Nebulae & clusters', bh:'Black holes', craft:'Spacecraft', place:'Places' };
 function renderResults(){
   const q=qEl.value.trim().toLowerCase().replace(/\s*\((?:star|planet)\)\s*$/,'');
   const terms=q.split(/\s+/).filter(Boolean);
@@ -3393,7 +3478,7 @@ function frame(now){
   if (simTime > TMAX){ simTime=TMAX; if (dir>0) setDir(0); }
   if (simTime < TMIN){ simTime=TMIN; if (dir<0) setDir(0); }
   if (SHOW.beltSwirl) beltDemoDays = (beltDemoDays + adt*25) % 7305000; asteroids.material.uniforms.uTw.value = (asteroids.material.uniforms.uTw.value + adt) % 6283.2;
-  updateEphemeris(simTime); updateAlign(adt); updateDwarfs(eph.jd); updateAsteroids(eph.jd); updateCraft(simTime); if (SHOW.orbitsFast) orbitDemoDays += adt*0.35; updateMoonsExo(simTime);
+  updateEphemeris(simTime); updateAlign(adt); updateDwarfs(eph.jd); updateAsteroids(eph.jd); updateComet(eph.jd); updateCraft(simTime); if (SHOW.orbitsFast) orbitDemoDays += adt*0.35; updateMoonsExo(simTime);
 
   if (flight){
     flight.t+=dt; const u=clamp(flight.t/flight.dur,0,1); flight.u=u; flight.s=smooth(0.2,0.8,u);
@@ -3523,6 +3608,13 @@ function frame(now){
   { const tk=activeTarget();
     for (const A of AST){ place(A.mesh, A.P, A.R, d); orientBody(A.mesh, spinFrame(Z, (hours/6 + (SHOW.spin?spinT/9:0))*Math.PI*2 % (Math.PI*2), V()), Z);
       const show = SHOW.orbits && (tk==='a:'+A.k || infoKey==='a:'+A.k); A.orbit.visible=show; if (show){ place(A.orbit, eph.sun, AU, d); A.orbit.material.opacity=0.5*rangeAlpha([[7,15.6]],zoom); } } }
+  { // 3I/ATLAS: its path, and Ether's artwork with the tails pointed away from the Sun
+    const tk=activeTarget(), sel = tk==='c:3i' || infoKey==='c:3i', oa = SHOW.orbits ? rangeAlpha([[9.2,14.6]], zoom)*(sel?1:0.55) : 0;
+    comet3i.orbit.visible = oa>0.01 && C3I.r<80; if (comet3i.orbit.visible){ comet3i.orbit.material.opacity=0.55*oa; place(comet3i.orbit, eph.sun, AU, d); }
+    const art=comet3i.art, near=camWorld.distanceTo(C3I.P) < 3e7; art.visible=near;
+    if (near){ place(art, C3I.P, C3I_ART_H, d);
+      const ac=tmpV.copy(C3I.anti).applyQuaternion(tmpQ.copy(camera.quaternion).invert()), th=Math.atan2(ac.y, ac.x)+Math.PI;
+      art.quaternion.copy(camera.quaternion).multiply(tmpQ.setFromAxisAngle(Z, th)); comet3i.U.uT.value=anow/1000; } }
   kuiper.rotation.z = (2*Math.PI*beltDemoDays/(365.25*Math.pow(42,1.5))) % (2*Math.PI);
   [[kuiper,[[11.9,15.3]],0.5],[oort,[[14.1,17.3]],0.4]].forEach(([o,r,b]) => { const a=rangeAlpha(r,zoom); o.visible=a>0.01; o.material.opacity=b*a; place(o, eph.sun, AU, d); });
 
