@@ -164,6 +164,7 @@ body{background:var(--void);color:var(--ink);font-family:var(--f-ui);overflow:hi
 .is-collapsed>.panel-head .panel-toggle svg,.is-collapsed>.top .panel-toggle svg,.is-collapsed>.panel-toggle svg{transform:rotate(-90deg)}
 .panel-head{display:flex;align-items:center;gap:8px;flex:1 1 100%;width:100%}
 .panel-content{min-width:0}
+.panel,.layers,.place{box-sizing:border-box}
 .find>.panel-content,.clock>.panel-content,.zoomrail>.panel-content{display:contents}
 .find:not(.is-collapsed)>.panel-toggle .panel-title{display:none}
 .find.is-collapsed{width:max-content!important;max-width:100%}
@@ -324,7 +325,8 @@ body{background:var(--void);color:var(--ink);font-family:var(--f-ui);overflow:hi
 
 @media (max-width:760px){
   #hud{grid-template-columns:minmax(0,1fr);grid-template-rows:auto auto auto minmax(0,1fr);grid-template-areas:"dock" "find" "place" ".";gap:10px}
-  .dock{width:100%;max-height:none;overflow:visible}
+  .dock{width:100%;max-height:48vh;overflow:auto}
+  .dock>*{flex-shrink:0}
   .place{grid-area:place;position:static;width:auto;align-self:start}
   .find{justify-self:stretch;width:100%}
   #region{font-size:24px}
