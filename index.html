@@ -2234,7 +2234,7 @@ const narrow = () => matchMedia('(max-width:760px)').matches;
 function fitPopup(el){
   if(!el || el.hidden || !el.classList.contains('layers')) return;
   const anchor=document.getElementById('findPanel').getBoundingClientRect();
-  document.getElementById('hud').appendChild(el);el.style.pointerEvents='auto';
+  document.getElementById('hud').appendChild(el);el.style.pointerEvents='auto';el.style.zIndex='11';
   const maxH=Math.max(80,Math.min(innerHeight-24,innerHeight*.72,512));
   el.style.position='fixed';el.style.right='auto';el.style.maxHeight=maxH+'px';
   const width=el.getBoundingClientRect().width, height=Math.min(el.scrollHeight+2,maxH);
