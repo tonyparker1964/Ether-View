@@ -557,6 +557,7 @@ body{background:var(--void);color:var(--ink);font-family:var(--f-ui);overflow:hi
 <script>window.PLANET_IMG={earth:{portrait:'img/portrait-earth.webp',map:'img/map-earth.webp'},mercury:{portrait:'img/portrait-mercury.webp',map:'img/map-mercury.webp'},venus:{portrait:'img/portrait-venus.webp',map:'img/map-venus.webp'},mars:{portrait:'img/portrait-mars.webp',map:'img/map-mars.webp'},jupiter:{portrait:'img/portrait-jupiter.webp',map:'img/map-jupiter.webp'},saturn:{portrait:'img/portrait-saturn.webp',map:'img/map-saturn.webp'},uranus:{portrait:'img/portrait-uranus.webp',map:'img/map-uranus.webp'},neptune:{portrait:'img/portrait-neptune.webp',map:'img/map-neptune.webp'},pluto:{portrait:'img/portrait-pluto.webp',map:'img/map-pluto.webp'},sun:{portrait:'img/portrait-sun.webp',map:'img/map-sun.webp'}};</script>
 <script>window.PLANET_IMG['b:sgra']={portrait:'img/sgra-4k.jpg'};</script>
 <script>window.PLANET_IMG['c:3i']={portrait:'img/3i-atlas-4k.jpg'};</script>
+<script>'pallas juno vesta hygiea interamnia europa52 davida sylvia eunomia psyche iris hebe lutetia mathilde ida gaspra eros didymos itokawa ryugu bennu apophis phaethon cruithne hektor patroclus chiron'.split(' ').forEach(k => { window.PLANET_IMG['a:'+k]={ portrait:'img/ast-'+k+'.jpg', credit:'Image by Tony Parker (Ether)' }; });</script>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
 <script>
 function startExplorer(){
@@ -1444,6 +1445,8 @@ AST.forEach((A,i) => {
   for (let j=0;j<pos.count;j++){ const x=pos.getX(j), y=pos.getY(j), z=pos.getZ(j); const f=1+lump*(vnoise(x*2+i*7,y*2+z*1.7,40+i)*0.8+vnoise(x*5+i,y*5-z*3,50+i)*0.35); pos.setXYZ(j, x*f*(A.D<100?1.25:1), y*f, z*f*(A.D<100?0.85:1)); }
   g.computeVertexNormals();
   A.mesh=new THREE.Mesh(g, new THREE.MeshStandardMaterial({ map:craterTexA, color:A.col, roughness:0.95 })); scene.add(A.mesh);
+  // the rock's own surface, from Ether's asteroid portraits
+  texLoader.load('img/astmap-'+A.k+'.jpg', t => { t.anisotropy=MAX_ANISO; t.wrapS=THREE.RepeatWrapping; A.mesh.material.map=t; A.mesh.material.color.set(0xffffff); A.mesh.material.needsUpdate=true; });
   const pts=[], v=V(); for (let j=0;j<=360;j++){ orbitXYZ({...A.o}, j/360*Math.PI*2, v); pts.push(v.x,v.y,v.z); }
   const og=new THREE.BufferGeometry(); og.setAttribute('position',new THREE.Float32BufferAttribute(pts,3));
   A.orbit=new THREE.Line(og,new THREE.LineBasicMaterial({ color:0xd8c4a0, transparent:true, opacity:0.5, depthWrite:false })); A.orbit.frustumCulled=false; A.orbit.visible=false; scene.add(A.orbit);
@@ -3008,7 +3011,7 @@ function openInfo(k){
   infoEl.innerHTML = `<div class="top" data-drag><span class="grip" aria-hidden="true" title="Drag to move" style="margin-top:4px"></span><div style="flex:1;min-width:0"><p class="kind">${b.type}</p><h2>${b.name}</h2></div>
     <button class="closebtn" type="button" id="infoClose" aria-label="Close details"><svg viewBox="0 0 12 12" aria-hidden="true"><path d="M2 2l8 8M10 2l-8 8"/></svg></button></div>
     ${keplerBodyLinks(k)}
-    ${img ? `<figure class="portrait"><button type="button" class="zoomimg" id="infoImg" ${art?'disabled':''} aria-label="View ${b.name} image full size">${art?'<span role="status">Rendering unique 4K image…</span>':`<img src="${img.portrait}" alt="${b.name}">`}</button><figcaption>${art ? art.credit : photo ? photo.credit+' · <a href="'+photo.source+'" target="_blank" rel="noopener">Telescope image and source</a>' : 'Image by Tony Parker (Ether), upscaled to 4K'} · tap to view full size</figcaption></figure>` : ''}
+    ${img ? `<figure class="portrait"><button type="button" class="zoomimg" id="infoImg" ${art?'disabled':''} aria-label="View ${b.name} image full size">${art?'<span role="status">Rendering unique 4K image…</span>':`<img src="${img.portrait}" alt="${b.name}">`}</button><figcaption>${art ? art.credit : photo ? photo.credit+' · <a href="'+photo.source+'" target="_blank" rel="noopener">Telescope image and source</a>' : (img.credit || 'Image by Tony Parker (Ether), upscaled to 4K')} · tap to view full size</figcaption></figure>` : ''}
     <dl class="facts">${b.facts.map(f=>`<dt>${f[0]}</dt><dd>${f[1]}</dd>`).join('')}</dl>
     ${b.note ? `<p class="note">${b.note}</p>` : ''}
     <h3>For the date shown</h3><dl class="facts" id="infoLive"></dl>
