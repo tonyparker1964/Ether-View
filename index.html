@@ -2070,7 +2070,7 @@ function makePanelCollapsible(panel,label,detail=false){
     button.setAttribute('aria-expanded',String(!collapsed));button.setAttribute('aria-label',(collapsed?'Expand ':'Collapse ')+label);button.title=(collapsed?'Expand ':'Collapse ')+label;
     if(collapsed && panel.id==='findPanel'){
       body.querySelectorAll('[role="dialog"],[role="listbox"]').forEach(el=>el.hidden=true);
-      body.querySelectorAll('[aria-expanded]').forEach(el=>el.setAttribute('aria-expanded','false'));
+      body.querySelectorAll('#q,#systemsBtn,#musicBtn,#layersBtn').forEach(el=>el.setAttribute('aria-expanded','false'));
     }
     if(save){panelCollapse[panel.id]=collapsed;try{localStorage.setItem(COLLAPSE_KEY,JSON.stringify(panelCollapse));}catch(e){}}
   };
