@@ -1,0 +1,26 @@
+[
+  {
+    "key": "kepler16a",
+    "file": "img/body-kepler16a.jpg",
+    "bytes": 1019469,
+    "sha256": "ce2cfe7f36fbb6a45f69fad4545cf0fee91ae5541908ec3d840cc91ad9c36e73",
+    "gitSha": "dc597f88305abc9250eb74c6bdbec49ceb9519a8",
+    "sourceWidth": 1774,
+    "sourceHeight": 887,
+    "portraitWidth": 3840,
+    "portraitHeight": 2160,
+    "provenance": "AI-generated stellar photosphere illustration, not an observed starspot map"
+  },
+  {
+    "key": "kepler16b",
+    "file": "img/body-kepler16b.jpg",
+    "bytes": 835676,
+    "sha256": "8927ae68d4d05f4b92e8c8ca27469c82d592fbaee5d8eac22c32e3f6a62a6c5b",
+    "gitSha": "3209a011c9dd592b4db2b95677c40c260dacebb9",
+    "sourceWidth": 1774,
+    "sourceHeight": 887,
+    "portraitWidth": 3840,
+    "portraitHeight": 2160,
+    "provenance": "AI-generated stellar photosphere illustration, not an observed starspot map"
+  }
+]
