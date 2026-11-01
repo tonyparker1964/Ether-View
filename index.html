@@ -2231,6 +2231,16 @@ const PANEL_KEY='ethers-view-panels';
 let panelPos={}; try { panelPos=JSON.parse(localStorage.getItem(PANEL_KEY)||'{}')||{}; } catch(e){ panelPos={}; }
 const savePanels = () => { try { localStorage.setItem(PANEL_KEY, JSON.stringify(panelPos)); } catch(e){} };
 const narrow = () => matchMedia('(max-width:760px)').matches;
+function fitPopup(el){
+  if(!el || el.hidden || !el.classList.contains('layers')) return;
+  const anchor=document.getElementById('findPanel').getBoundingClientRect();
+  const maxH=Math.max(80,Math.min(innerHeight-24,innerHeight*.72,512));
+  el.style.position='fixed';el.style.right='auto';el.style.maxHeight=maxH+'px';
+  const width=el.getBoundingClientRect().width, height=Math.min(el.scrollHeight+2,maxH);
+  el.style.left=clamp(anchor.right-width,12,Math.max(12,innerWidth-width-12))+'px';
+  el.style.top=clamp(anchor.bottom+6,12,Math.max(12,innerHeight-height-12))+'px';
+}
+window.addEventListener('resize',()=>['layers','systems','musicPanel'].forEach(id=>fitPopup(document.getElementById(id))));
 function applyPanel(el){
   const p=panelPos[el.id];
   if (!p || narrow()){ el.classList.remove('floating'); el.style.left=el.style.top=el.style.width=''; return; }
@@ -2285,6 +2295,7 @@ function makePanelCollapsible(panel,label,detail=false){
       body.querySelectorAll('[role="dialog"],[role="listbox"]').forEach(el=>el.hidden=true);
       body.querySelectorAll('#q,#systemsBtn,#musicBtn,#layersBtn').forEach(el=>el.setAttribute('aria-expanded','false'));
     }
+    if(panel.classList.contains('layers')) requestAnimationFrame(()=>fitPopup(panel));
     if(save){panelCollapse[panel.id]=collapsed;try{localStorage.setItem(COLLAPSE_KEY,JSON.stringify(panelCollapse));}catch(e){}}
   };
   button.addEventListener('click',()=>set(!body.hidden,true));
@@ -2371,7 +2382,7 @@ renderTracks();
 function refreshMusicUI(){ const on=!MUSIC.el.paused; const t=TRACKS[MUSIC.cur]||TRACKS[0]; document.getElementById('mTitle').textContent=t.name; document.getElementById('mArtist').textContent=t.builtin?'Ether':'From your device';
   trackList.querySelectorAll('.trk').forEach((b,i)=>b.setAttribute('aria-current', String(i===MUSIC.cur))); document.getElementById('mPlayIcon').innerHTML = on ? '<path d="M2 1.5h3v9H2zM7 1.5h3v9H7z"/>' : '<path d="M2.5 1.5v9l8-4.5z"/>';
   mPlay.setAttribute('aria-label', on?'Pause':'Play'); musicBtn.setAttribute('aria-pressed', String(on)); }
-function setMusicOpen(o){ musicPanel.hidden=!o; musicBtn.setAttribute('aria-expanded',String(o)); if (o){ setLayersOpen(false); setSystemsOpen(false); } }
+function setMusicOpen(o){ musicPanel.hidden=!o; musicBtn.setAttribute('aria-expanded',String(o)); if (o){ setLayersOpen(false); setSystemsOpen(false); fitPopup(musicPanel); } }
 musicBtn.addEventListener('click', () => setMusicOpen(musicPanel.hidden));
 mPlay.addEventListener('click', () => MUSIC.el.paused ? musicPlay() : musicPause());
 let seeking=false; mSeek.addEventListener('input', () => { seeking=true; mTime.textContent=fmtClock(+mSeek.value); });
@@ -2397,7 +2408,7 @@ stringColors.value=SHOW.stringColors; aspectKey.hidden = SHOW.stringColors!=='as
 stringColors.addEventListener('change', () => { SHOW.stringColors=stringColors.value; aspectKey.hidden = SHOW.stringColors!=='aspects'; saveLayers(); });
 stringTrans.addEventListener('input', () => { SHOW.stringTrans=+stringTrans.value; stringTransOut.textContent=SHOW.stringTrans+'%'; saveLayers(); });
 document.getElementById('watchOrbits').addEventListener('click', () => { unitIdx=5; setDir(1); setLayersOpen(false); hideHint(); });
-const setLayersOpen = o => { layersEl.hidden=!o; layersBtn.setAttribute('aria-expanded', String(o)); if (o){ setSystemsOpen(false); if (typeof setMusicOpen==='function') setMusicOpen(false); } };
+const setLayersOpen = o => { layersEl.hidden=!o; layersBtn.setAttribute('aria-expanded', String(o)); if (o){ setSystemsOpen(false); if (typeof setMusicOpen==='function') setMusicOpen(false); fitPopup(layersEl); } };
 const systemsBtn=document.getElementById('systemsBtn'), systemsEl=document.getElementById('systems'), sysList=document.getElementById('sysList');
 let sysFilter='all';
 function renderSystems(){
@@ -2405,7 +2416,7 @@ function renderSystems(){
   const list = items.filter(it => sysFilter==='all' || (sysFilter==='double') === it.double);
   sysList.innerHTML = list.map((it,i) => `<li><button type="button" class="sysitem" data-sys="${it.home?'home':it.sys.key}"><span>${it.name}<small>${it.sub}</small></span>${it.double?'<span class="badge">2 suns</span>':''}</button></li>`).join('');
 }
-function setSystemsOpen(o){ systemsEl.hidden=!o; systemsBtn.setAttribute('aria-expanded', String(o)); if (o){ renderSystems(); layersEl.hidden=true; layersBtn.setAttribute('aria-expanded','false'); } }
+function setSystemsOpen(o){ systemsEl.hidden=!o; systemsBtn.setAttribute('aria-expanded', String(o)); if (o){ renderSystems(); layersEl.hidden=true; layersBtn.setAttribute('aria-expanded','false'); fitPopup(systemsEl); } }
 systemsBtn.addEventListener('click', () => setSystemsOpen(systemsEl.hidden));
 systemsEl.addEventListener('click', e => {
   const c=e.target.closest('[data-sysf]'); if (c){ sysFilter=c.dataset.sysf; systemsEl.querySelectorAll('[data-sysf]').forEach(x=>x.setAttribute('aria-pressed', String(x===c))); renderSystems(); return; }
