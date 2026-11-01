@@ -533,6 +533,7 @@ body{background:var(--void);color:var(--ink);font-family:var(--f-ui);overflow:hi
 <p id="hint">Scroll or pinch to zoom in · Search or click an object to visit it · Drag to look around</p>
 
 <script>window.PLANET_IMG={earth:{portrait:'img/portrait-earth.webp',map:'img/map-earth.webp'},mercury:{portrait:'img/portrait-mercury.webp',map:'img/map-mercury.webp'},venus:{portrait:'img/portrait-venus.webp',map:'img/map-venus.webp'},mars:{portrait:'img/portrait-mars.webp',map:'img/map-mars.webp'},jupiter:{portrait:'img/portrait-jupiter.webp',map:'img/map-jupiter.webp'},saturn:{portrait:'img/portrait-saturn.webp',map:'img/map-saturn.webp'},uranus:{portrait:'img/portrait-uranus.webp',map:'img/map-uranus.webp'},neptune:{portrait:'img/portrait-neptune.webp',map:'img/map-neptune.webp'},pluto:{portrait:'img/portrait-pluto.webp',map:'img/map-pluto.webp'},sun:{portrait:'img/portrait-sun.webp',map:'img/map-sun.webp'}};</script>
+<script>window.PLANET_IMG['b:sgra']={portrait:'img/sgra-4k.jpg'};</script>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
 <script>
 function startExplorer(){
@@ -1597,9 +1598,63 @@ const BH = [ // key, name, ra, dec, ly, solar masses, feeding disk, type, conste
 const diskC = makeCanvas(256,4); { const x=diskC.getContext('2d'); const g=x.createLinearGradient(0,0,256,0);
   g.addColorStop(0,'rgba(255,250,235,1)'); g.addColorStop(0.15,'rgba(255,214,140,.95)'); g.addColorStop(0.45,'rgba(255,140,60,.55)'); g.addColorStop(1,'rgba(160,40,20,0)'); x.fillStyle=g; x.fillRect(0,0,256,4); }
 const diskTex = tex(diskC);
+// Sagittarius A*: Ether's 4K artwork, brought to life. The disk is unwound from its tilt, each ring of gas is turned at its own
+// Kepler speed (inner gas laps the outer), and the result is drawn back in the image's perspective. The jet pulses outward and
+// the inner disk flickers the way Sgr A* flares in the infrared and X-ray.
+const SGRA_VS = `#include <common>
+#include <logdepthbuf_pars_vertex>
+varying vec2 vUv;
+void main(){ vUv=uv; gl_Position=projectionMatrix*modelViewMatrix*vec4(position,1.0);
+#include <logdepthbuf_vertex>
+}`;
+const SGRA_FS = `#include <common>
+#include <logdepthbuf_pars_fragment>
+uniform sampler2D uMap; uniform float uT, uReady; varying vec2 vUv;
+` + NOISE_GLSL + `
+const float ASP = 1672.0/941.0;                 // image aspect
+const vec2 C = vec2(0.5478, 0.5951);            // the shadow's center in the image
+const float TILT = 0.314, SQ = 0.45;            // disk major axis about 18 degrees off horizontal; seen at about 63 degrees
+mat2 rot(float a){ float c=cos(a), s=sin(a); return mat2(c,-s,s,c); }
+vec2 toDisk(vec2 uv){ vec2 p=(uv-C)*vec2(ASP,1.0); p=rot(TILT)*p; p.y/=SQ; return p; }
+vec2 toImg(vec2 q){ q.y*=SQ; q=rot(-TILT)*q; return q/vec2(ASP,1.0)+C; }
+vec3 samp(vec2 q, float ang){ return texture2D(uMap, clamp(toImg(rot(ang)*q), 0.0005, 0.9995)).rgb; }
+void main(){
+#include <logdepthbuf_fragment>
+  vec2 q=toDisk(vUv); float r=length(q);
+  // Keplerian shear, two overlapping phases so the gas keeps flowing without winding up forever
+  float om = 0.024*pow(max(r,0.085),-1.5) * (1.0-smoothstep(0.85,1.25,r)) * smoothstep(0.055,0.08,r);
+  float T=uT*0.22, f1=fract(T), f2=fract(T+0.5), w1=1.0-abs(2.0*f1-1.0);
+  vec3 col = samp(q, om*(f1-0.5)*2.4)*w1 + samp(q, om*(f2-0.5)*2.4)*(1.0-w1);
+  // the relativistic jet stays straight and pulses outward
+  vec2 pp=(vUv-C)*vec2(ASP,1.0), j0=vec2(0.0329,0.0); vec2 jd=normalize(vec2(-0.469,-0.883));
+  vec2 rel=pp-j0; float along=dot(rel,jd), off=abs(rel.x*jd.y-rel.y*jd.x);
+  float jet=(1.0-smoothstep(0.008,0.03,off))*smoothstep(0.06,0.1,r);
+  vec3 straight=texture2D(uMap, vUv).rgb;
+  col=mix(col, straight, jet*0.85);
+  float knot=pow(0.5+0.5*sin(abs(along)*38.0 - uT*5.0), 6.0);
+  col+=straight*vec3(0.7,0.55,1.0)*jet*knot*1.4;
+  // flares in the inner disk and a shimmering photon ring
+  float flare=1.0+0.22*smoothstep(0.35,1.0,vn(vec2(uT*0.35,1.7)))*(1.0-smoothstep(0.08,0.32,r));
+  float ring=exp(-pow((r-0.088)/0.012,2.0))*(0.7+0.3*vn(vec2(atan(q.y,q.x)*4.0, uT*0.8)));
+  col=col*flare+vec3(1.0,0.78,0.45)*ring*0.35;
+  float shadow=1.0-smoothstep(0.062,0.074,r);
+  col*=1.0-shadow;
+  // let the black sky around the art fall away, and soften the frame
+  float lum=max(col.r,max(col.g,col.b));
+  vec2 e=abs(vUv-0.5)*2.0; float frame=(1.0-smoothstep(0.72,1.0,e.x))*(1.0-smoothstep(0.62,1.0,e.y));
+  float a=max(smoothstep(0.02,0.22,lum), shadow*smoothstep(0.0,0.6,frame))*frame*uReady;
+  gl_FragColor=vec4(col, a);
+}`;
+const SGRA_U = { uMap:{ value:null }, uT:{ value:0 }, uReady:{ value:0 } };
+new THREE.TextureLoader().load('img/sgra-4k.jpg', t => { t.anisotropy=MAX_ANISO; t.wrapS=t.wrapT=THREE.ClampToEdgeWrapping; SGRA_U.uMap.value=t; SGRA_U.uReady.value=1; });
 BH.forEach(b => {
   b.P = b[2]===null ? GC.clone() : radec(b[2],b[3]).multiplyScalar(b[4]*LY); b.Rs = 2953*b[5];
   const g=new THREE.Group();
+  if (b[0]==='sgra'){   // the shadow is about 2.6 Schwarzschild radii across in radius; in the art it is 59 of 941 pixels
+    const H=941/59*2.6, Wd=H*1672/941;
+    b.ring=new THREE.Mesh(new THREE.PlaneGeometry(Wd,H), new THREE.ShaderMaterial({ uniforms:SGRA_U, vertexShader:SGRA_VS, fragmentShader:SGRA_FS, transparent:true, depthWrite:false, side:THREE.DoubleSide }));
+    b.ring.frustumCulled=false; g.add(b.ring); g.frustumCulled=false; scene.add(g); b.group=g; return;
+  }
   g.add(new THREE.Mesh(new THREE.SphereGeometry(2.6,48,24), new THREE.MeshBasicMaterial({ color:0x000000 })));
   b.ring = new THREE.Mesh(new THREE.RingGeometry(2.6,3.0,96), new THREE.MeshBasicMaterial({ color:0xffd9a8, transparent:true, opacity:0.6, blending:THREE.AdditiveBlending, depthWrite:false, side:THREE.DoubleSide }));
   g.add(b.ring);
@@ -2006,7 +2061,8 @@ NEB.forEach(n => { const P=n.pos.clone().multiplyScalar(LY);
   BODY['n:'+n[0]] = { name:n[1], ref: n[0]==='omega' ? 'Omega Centauri' : 'the '+n[1], R:n[5]*LY, type:n[7], group:'neb', far:true, P, dir:P.clone().normalize(), con:n[8], alias:n[7]+' '+n[8],
     tag: n[6]==='open'||n[6]==='globular' ? 'Cluster' : 'Nebula', facts:[['Distance',`About ${n[4].toLocaleString('en-US')} ly`],['Size',n[9]],['Constellation',n[8]]], note:n[10] }; });
 BH.forEach(b => { BODY['b:'+b[0]] = { name:b[1], ref:b[1], R:b.Rs*8, type:b[7], group:'bh', far:true, P:b.P, dir:b.P.clone().normalize(), con:b[8], alias:'black hole '+b[8], tag:'Black hole', facts:b[9],
-  note:b[10]+' The 3D view is illustrative: the dark sphere marks the shadow, the glowing ring the photon orbit'+(b[6]?', and the disk its hot accretion disk.':'.') }; });
+  note:b[10]+(b[0]==='sgra' ? ' The animated view is Ether’s 4K artwork: its gas turns at Kepler speeds, inner rings lapping outer ones, while the jet pulses and the inner disk flickers, as Sgr A* flares several times a day. The art is interpretive; the real disk is faint and no jet has been confirmed.' : ' The 3D view is illustrative: the dark sphere marks the shadow, the glowing ring the photon orbit'+(b[6]?', and the disk its hot accretion disk.':'.')) }; });
+BODY['b:sgra'].view = BH[0].Rs*42;   // frame the whole animated artwork on arrival
 const CRAFT_NOTE = 'Its orbit uses the real altitude and tilt, but the exact position along the orbit is illustrative: live tracking needs current orbital data this page can’t download.';
 BODY['c:iss'] = { name:'International Space Station', ref:'the ISS', R:60, type:'Crewed space station · low Earth orbit', group:'craft', P:CRAFT.iss.P, alias:'iss station crew', tag:'Spacecraft',
   facts:[['Altitude','About 420 km'],['Orbit','About 92 minutes'],['Speed','About 28,000 km/h'],['Size','109 m across'],['First module','1998']], note:CRAFT_NOTE };
@@ -3307,7 +3363,7 @@ function frame(now){
   { const oa = SHOW.orbits ? rangeAlpha([[3.8,8.6]], zoom) : 0;
     for (const c of [CRAFT.iss, CRAFT.hubble]){ c.orbit.visible = oa>0.01 && !!c.Ne; if (!c.orbit.visible) continue; c.orbit.material.opacity=0.45*oa; place(c.orbit, eph.earth, c.a, d); mTmp.makeBasis(c.Ne, c.Me, tmpN.copy(c.Ne).cross(c.Me)); c.orbit.quaternion.setFromRotationMatrix(mTmp); } }
   // black holes & spacecraft
-  BH.forEach(b => { place(b.group, b.P, b.Rs, d); b.ring.quaternion.copy(camera.quaternion); });
+  BH.forEach(b => { place(b.group, b.P, b.Rs, d); b.ring.quaternion.copy(camera.quaternion); }); SGRA_U.uT.value=(now/1000)%3600;
   for (const c of [CRAFT.iss, CRAFT.hubble]){ place(c.model, c.P, 1, d); const rh=tmpV.copy(c.P).sub(eph.earth).normalize(); mTmp.makeBasis(c.vel, c.nrm, rh); c.model.quaternion.setFromRotationMatrix(mTmp); }
   { const c=CRAFT.jwst; place(c.model, c.P, 1, d); const zz=tmpV.copy(c.P).sub(eph.sun).normalize(), xx=tmpW.copy(Z).cross(zz).normalize(), yy=tmpN.copy(zz).cross(xx); mTmp.makeBasis(xx,yy,zz); c.model.quaternion.setFromRotationMatrix(mTmp); }
 
