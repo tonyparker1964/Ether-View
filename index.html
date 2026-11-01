@@ -158,6 +158,23 @@ body{background:var(--void);color:var(--ink);font-family:var(--f-ui);overflow:hi
 .collapse svg{width:12px;height:12px;stroke:var(--ink-dim);stroke-width:2;fill:none;transition:transform .2s}
 .skypanel.collapsed .collapse svg{transform:rotate(-90deg)}
 .skypanel.collapsed #skyBody{display:none}
+.panel-toggle{appearance:none;display:flex;align-items:center;gap:8px;padding:2px 0;border:0;background:none;color:var(--ink);font:400 15px/1.2 var(--f-display);text-align:left;cursor:pointer;min-height:28px}
+.panel-toggle svg{width:12px;height:12px;flex:none;fill:none;stroke:var(--ink-dim);stroke-width:2;transition:transform .2s}
+.panel-toggle:focus-visible{outline:2px solid var(--sun);outline-offset:3px;border-radius:4px}
+.is-collapsed>.panel-head .panel-toggle svg,.is-collapsed>.top .panel-toggle svg,.is-collapsed>.panel-toggle svg{transform:rotate(-90deg)}
+.panel-head{display:flex;align-items:center;gap:8px;flex:1 1 100%;width:100%}
+.panel-content{min-width:0}
+.find>.panel-content,.clock>.panel-content,.zoomrail>.panel-content{display:contents}
+.find:not(.is-collapsed)>.panel-toggle .panel-title{display:none}
+.find.is-collapsed{width:max-content!important;max-width:100%}
+.find>.panel-toggle{flex:none;padding:0 4px}
+.clock>.panel-head{margin-bottom:0}
+.info>.top>.panel-toggle{flex:none;width:28px;justify-content:center}
+.layers>.panel-head{margin-bottom:8px}
+.layers.is-collapsed>.panel-head{margin-bottom:0}
+.zoomrail>.panel-toggle{flex-direction:column;gap:3px;font:500 9px/1 var(--f-ui);padding:0;width:28px;justify-content:center}
+.zoomrail.is-collapsed{gap:0}
+@media (prefers-reduced-motion:reduce){.panel-toggle svg{transition:none}}
 #skyBody{margin-top:8px}
 .meta{white-space:nowrap;font:400 10px/1 var(--f-ui);letter-spacing:.12em;text-transform:uppercase;color:var(--ink-dim)}
 #posTable{width:100%;border-collapse:collapse;font-size:12px}
@@ -390,7 +407,7 @@ body{background:var(--void);color:var(--ink);font-family:var(--f-ui);overflow:hi
   </section>
 
   <section class="info panel" id="info" hidden aria-label="Planet details"></section>
-  <div class="zoomrail panel" role="group" aria-label="Zoom">
+  <div class="zoomrail panel" id="zoomPanel" role="group" aria-label="Zoom">
     <span class="zr-end" aria-hidden="true">Far</span>
     <div class="zr-track"><input type="range" id="zoomSlider" min="0.3" max="21.75" step="0.01" value="21" aria-label="Zoom: drag up to zoom out, down to zoom in"></div>
     <span class="zr-end" aria-hidden="true">Near</span>
@@ -2032,6 +2049,35 @@ const skyPanel=document.getElementById('skypanel'), skyCollapse=document.getElem
 function setCollapsed(c, save){ skyPanel.classList.toggle('collapsed', c); skyCollapse.setAttribute('aria-expanded', String(!c)); if (save){ try { localStorage.setItem('mtmw-sky-collapsed', c?'1':'0'); } catch(e){} } }
 { let c = matchMedia('(max-width:760px), (max-height:640px)').matches; try { const v=localStorage.getItem('mtmw-sky-collapsed'); if (v!==null) c = v==='1'; } catch(e){} setCollapsed(c, false); }
 skyCollapse.addEventListener('click', () => setCollapsed(!skyPanel.classList.contains('collapsed'), true));
+// Every panel keeps an accessible header while its contents are collapsed.
+const COLLAPSE_KEY='ethers-view-panel-collapse';
+let panelCollapse={};
+try { const saved=JSON.parse(localStorage.getItem(COLLAPSE_KEY)||'{}'); if(saved && typeof saved==='object' && !Array.isArray(saved)) panelCollapse=saved; } catch(e){}
+function makePanelCollapsible(panel,label,detail=false){
+  if (!panel || panel.querySelector(':scope > .panel-content')) return;
+  const body=document.createElement('div'); body.className='panel-content'; body.id=panel.id+'Content';
+  const top=detail ? panel.querySelector(':scope > .top') : null;
+  [...panel.childNodes].forEach(node=>{ if(node!==top && !(panel.id==='findPanel' && node.nodeType===1 && node.classList.contains('grip'))) body.append(node); });
+  panel.append(body);
+  const button=document.createElement('button'); button.type='button'; button.className='panel-toggle';
+  button.id=panel.id+'Collapse'; button.setAttribute('aria-controls',body.id);
+  button.innerHTML='<svg viewBox="0 0 12 12" aria-hidden="true"><path d="M2 4l4 4 4-4"/></svg><span class="'+(detail?'sr':'panel-title')+'">'+label+'</span>';
+  if(top) top.insertBefore(button,top.querySelector('.closebtn'));
+  else if(panel.id==='findPanel' || panel.id==='zoomPanel') panel.insertBefore(button,body);
+  else { const head=document.createElement('div');head.className='panel-head';head.append(button);panel.insertBefore(head,body); }
+  const set=(collapsed,save)=>{
+    body.hidden=collapsed;panel.classList.toggle('is-collapsed',collapsed);
+    button.setAttribute('aria-expanded',String(!collapsed));button.setAttribute('aria-label',(collapsed?'Expand ':'Collapse ')+label);button.title=(collapsed?'Expand ':'Collapse ')+label;
+    if(collapsed && panel.id==='findPanel'){
+      body.querySelectorAll('[role="dialog"],[role="listbox"]').forEach(el=>el.hidden=true);
+      body.querySelectorAll('[aria-expanded]').forEach(el=>el.setAttribute('aria-expanded','false'));
+    }
+    if(save){panelCollapse[panel.id]=collapsed;try{localStorage.setItem(COLLAPSE_KEY,JSON.stringify(panelCollapse));}catch(e){}}
+  };
+  button.addEventListener('click',()=>set(!body.hidden,true));
+  set(panelCollapse[panel.id]===true,false);
+}
+[['findPanel','Search'],['clockPanel','Date and time'],['layers','Layers and names'],['systems','Star systems'],['musicPanel','Music'],['about','About the data'],['zoomPanel','Zoom']].forEach(([id,label])=>makePanelCollapsible(document.getElementById(id),label));
 // ---------- music: Ether's “The Big Bang · Zero Point Genesis”, with a beat follower for the visuals ----------
 const MUSIC = { el:new Audio('img/zero-point-genesis.mp3'), ctx:null, an:null, data:null, bass:0, level:0, ok:true, react:true, vol:70, loop:true };
 try { const v=JSON.parse(localStorage.getItem('ethers-view-music')||'null'); if (v){ MUSIC.vol=v.vol ?? 70; MUSIC.loop=v.loop ?? true; MUSIC.react=v.react ?? true; } } catch(e){}
@@ -2269,6 +2315,7 @@ function openInfo(k){
     ${b.note ? `<p class="note">${b.note}</p>` : ''}
     <h3>For the date shown</h3><dl class="facts" id="infoLive"></dl>
     ${(b.group==='craft' || b.group==='moons') ? '' : `<h3>${k==='earth'?'The zodiac from Earth':'In the zodiac'}</h3><div id="infoZodiac"></div>`}`;
+  makePanelCollapsible(infoEl,'Planet details',true);
   infoEl.hidden=false; hudEl.classList.add('info-open'); applyPanel(infoEl);
   document.getElementById('infoClose').addEventListener('click', closeInfo);
   const zi=document.getElementById('infoImg'); if (zi) zi.addEventListener('click', () => openViewer(img.portrait, b.name, photo?.credit));
