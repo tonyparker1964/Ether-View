@@ -121,8 +121,16 @@ body{background:var(--void);color:var(--ink);font-family:var(--f-ui);overflow:hi
 .info .kind{margin:0 0 6px;font:500 calc(10px*var(--fs))/1.2 var(--f-ui);letter-spacing:.18em;text-transform:uppercase;color:var(--sun)}
 .info h2{margin:0;font:400 calc(30px*var(--fs))/1 var(--f-display)}
 .infozoom{display:flex;gap:6px;margin:10px 0 4px}.infozoom .btn{flex:1;display:inline-flex;align-items:center;justify-content:center;gap:6px;font-size:calc(12px*var(--fs));padding:7px 8px}.infozoom svg{width:10px;height:10px;fill:currentColor}
-.homebtn{width:100%;margin:2px 0 10px;height:34px;color:#ffe2b0;border-color:rgba(230,194,124,.4);background:linear-gradient(90deg,rgba(230,194,124,.1),rgba(230,194,124,.03))}
+.homebtn{width:100%;margin:8px 0 4px;height:34px;color:#ffe2b0;border-color:rgba(230,194,124,.4);background:linear-gradient(90deg,rgba(230,194,124,.1),rgba(230,194,124,.03))}
 .stopbtn[aria-pressed="true"]{color:#ff9a8a;border-color:rgba(255,140,120,.55);background:rgba(255,120,100,.12)}
+.chatpanel{width:calc(22rem*var(--fs));display:flex;flex-direction:column}
+.chatlog{display:flex;flex-direction:column;gap:8px;max-height:min(48vh,26rem);overflow:auto;margin:8px 0;padding-right:2px}
+.chatmsg{margin:0;padding:8px 10px;border-radius:9px;font-size:calc(13px*var(--fs));line-height:1.5;white-space:pre-wrap;color:#e3e6ef}
+.chatmsg.you{align-self:flex-end;max-width:85%;background:rgba(150,176,240,.16);border:1px solid rgba(150,176,240,.25)}
+.chatmsg.ether{align-self:flex-start;max-width:95%;background:rgba(230,194,124,.08);border:1px solid rgba(230,194,124,.22)}
+.chatmsg.ether.wait{color:var(--ink-dim);font-style:italic}
+.chatform{display:flex;gap:6px}.chatform input{flex:1;min-width:0;height:32px;padding:0 9px;border:1px solid var(--line);border-radius:7px;background:rgba(255,255,255,.04);color:var(--ink);font:400 calc(13px*var(--fs))/1 var(--f-ui)}
+#alignToast{position:fixed;left:50%;top:calc(64px + env(safe-area-inset-top,0px));transform:translateX(-50%);z-index:8;max-width:calc(100vw - 32px);padding:8px 14px;border-radius:999px;background:rgba(40,30,10,.82);border:1px solid rgba(255,210,120,.55);color:#ffe2a8;font:500 calc(12.5px*var(--fs))/1.3 var(--f-ui);letter-spacing:.03em;pointer-events:none;box-shadow:0 0 24px rgba(255,200,100,.25)}
 .closebtn{appearance:none;background:none;border:1px solid var(--line);color:var(--ink-dim);width:28px;height:28px;border-radius:7px;display:grid;place-items:center;cursor:pointer;flex:none}
 .closebtn:hover{color:var(--ink);background:rgba(255,255,255,.06)}
 .closebtn svg{width:12px;height:12px;stroke:currentColor;stroke-width:2;fill:none}
@@ -370,6 +378,7 @@ body{background:var(--void);color:var(--ink);font-family:var(--f-ui);overflow:hi
   </section>
 
 
+  <div id="alignToast" hidden role="status"></div>
   <section class="find panel" id="findPanel" aria-label="Search" data-drag>
     <span class="grip" aria-hidden="true" title="Drag to move"></span>
     <div class="search">
@@ -379,6 +388,13 @@ body{background:var(--void);color:var(--ink);font-family:var(--f-ui);overflow:hi
     <button class="btn" id="zin" type="button" aria-label="Zoom in"><svg viewBox="0 0 12 12"><path d="M5 1h2v4h4v2H7v4H5V7H1V5h4z"/></svg></button>
     <button class="btn" id="zout" type="button" aria-label="Zoom out"><svg viewBox="0 0 12 12"><path d="M1 5h10v2H1z"/></svg></button>
     <button class="btn" id="systemsBtn" type="button" aria-label="Star systems" aria-expanded="false" aria-controls="systems"><svg viewBox="0 0 12 12"><circle cx="6" cy="6" r="1.7"/><path d="M6 1.2a4.8 4.8 0 1 1 0 9.6 4.8 4.8 0 0 1 0-9.6zm0 1.2a3.6 3.6 0 1 0 0 7.2 3.6 3.6 0 0 0 0-7.2z" opacity=".55"/><circle cx="10.2" cy="4" r="1"/></svg></button>
+    <button class="btn" id="chatBtn" type="button" aria-label="Ask Ether" aria-expanded="false" aria-controls="etherChat" title="Ask Ether"><svg viewBox="0 0 12 12"><path d="M6 .6 7.3 4.7 11.4 6 7.3 7.3 6 11.4 4.7 7.3.6 6 4.7 4.7z"/></svg></button>
+    <div id="etherChat" class="layers chatpanel" hidden role="dialog" aria-label="Ask Ether">
+      <h2>Ask Ether <button type="button" class="linkbtn" id="chatClear">Clear</button></h2>
+      <div id="chatLog" class="chatlog" aria-live="polite"><p class="chatmsg ether">Hi, I’m Ether. Ask me about any planet, star, black hole or alignment, what the sky means today, or say “take me to Saturn.”</p></div>
+      <form id="chatForm" class="chatform"><input id="chatIn" type="text" autocomplete="off" placeholder="Ask Ether…" aria-label="Your question"><button class="btn" id="chatSend" type="submit">Ask</button><button class="btn" id="chatStop" type="button" hidden>Stop</button></form>
+      <p class="lnote" id="chatNote"></p>
+    </div>
     <button class="btn" id="musicBtn" type="button" aria-label="Music" aria-expanded="false" aria-controls="musicPanel"><svg viewBox="0 0 12 12"><path d="M4 1.6 10.5.5v7.6a1.9 1.6 0 1 1-1.2-1.5V3L5.2 3.7v5.6A1.9 1.6 0 1 1 4 7.8z"/></svg></button>
     <button class="btn" id="layersBtn" type="button" aria-label="Layers and names" aria-expanded="false" aria-controls="layers"><svg viewBox="0 0 12 12"><path d="M6 .8 11.5 3.6 6 6.4.5 3.6zM1.6 5.6 6 7.8l4.4-2.2 1.1.6L6 9 .5 6.2zM1.6 8.2 6 10.4l4.4-2.2 1.1.6L6 11.6.5 8.8z"/></svg></button>
     <div id="layers" class="layers" hidden role="dialog" aria-label="Layers and names">
@@ -400,6 +416,7 @@ body{background:var(--void);color:var(--ink);font-family:var(--f-ui);overflow:hi
       <label class="switch"><input type="checkbox" data-layer="orbitsFast"><span></span>Speed up moon &amp; exoplanet orbits</label>
       <label class="switch"><input type="checkbox" data-layer="beltSwirl"><span></span>Swirl the asteroid &amp; Kuiper belts</label>
       <label class="switch"><input type="checkbox" data-layer="skySwirl"><span></span>Swirl the stars around Sagittarius A*</label>
+      <label class="switch"><input type="checkbox" data-layer="alignPulse"><span></span>Golden pulse when planets align</label>
       <p class="lnote">Planets follow the date shown, so they move along their orbits as time runs. <button type="button" class="linkbtn" id="watchOrbits">Watch them orbit (30 days per second)</button></p>
       <h2>Names <span class="namebtns"><button type="button" class="linkbtn" id="namesAll">All</button><button type="button" class="linkbtn" id="namesNone">None</button></span></h2>
       <label class="switch"><input type="checkbox" data-name="bodies"><span></span>Sun, planets, moons &amp; spacecraft</label>
@@ -449,8 +466,8 @@ body{background:var(--void);color:var(--ink);font-family:var(--f-ui);overflow:hi
         <button class="collapse" id="skyCollapse" type="button" aria-expanded="true" aria-controls="skyBody"><svg viewBox="0 0 12 12" aria-hidden="true"><path d="M2 4l4 4 4-4"/></svg><h2>Sky positions</h2></button>
         <span class="meta" id="zodMeta">Geocentric · sidereal</span>
       </header>
+      <button class="btn text homebtn" id="homeBtn" type="button" title="Fly back to the Sun and planets and set the clock to now">&#9737; Our solar system · now</button>
       <div id="skyBody">
-        <button class="btn text homebtn" id="homeBtn" type="button" title="Fly back to the Sun and planets and set the clock to now">&#9737; Our solar system · now</button>
         <table id="posTable"></table>
         <h3>Sky report</h3>
         <div id="skyReport"></div>
@@ -2024,7 +2041,7 @@ const rateSec = () => dir*UNITS[unitIdx][2];
 let zoom = 7.3, zoomTarget = 7.3, flight = null, lastD = 2e7;
 let cur = { target:null }, wEff = 0;      // body the view is centred on (null = automatic by distance)
 let az = 0, el = -8*DEG, mode = 'local';
-const SHOW = { stringColors:'bodies', strings:true, stringTrans:45, textSize:1.2, asteroids:true, grid:false, zodiacMode:'sidereal', orbitsFast:false, beltSwirl:true, skySwirl:true, orbits:true, constellations:true, stars:true, zodiac:true, axes:false, spin:true, names:{ asteroids:true, bodies:true, stars:true, constellations:true, deep:true, places:true } };
+const SHOW = { stringColors:'bodies', strings:true, stringTrans:45, textSize:1.2, asteroids:true, grid:false, zodiacMode:'sidereal', orbitsFast:false, beltSwirl:true, skySwirl:true, alignPulse:true, orbits:true, constellations:true, stars:true, zodiac:true, axes:false, spin:true, names:{ asteroids:true, bodies:true, stars:true, constellations:true, deep:true, places:true } };
 try { const v=JSON.parse(localStorage.getItem('ethers-view-layers')||'null'); if (v){ Object.assign(SHOW, v, { names:Object.assign(SHOW.names, v.names||{}) }); } } catch(e){}
 let spinT = 0;
 const camWorld = V(), F = V(), Fa = V(), Fb = V(), lastDir = V(1,0,0);
@@ -2590,7 +2607,7 @@ renderTracks();
 function refreshMusicUI(){ const on=!MUSIC.el.paused; const t=TRACKS[MUSIC.cur]||TRACKS[0]; document.getElementById('mTitle').textContent=t.name; document.getElementById('mArtist').textContent=t.builtin?'Ether':'From your device';
   trackList.querySelectorAll('.trk').forEach((b,i)=>b.setAttribute('aria-current', String(i===MUSIC.cur))); document.getElementById('mPlayIcon').innerHTML = on ? '<path d="M2 1.5h3v9H2zM7 1.5h3v9H7z"/>' : '<path d="M2.5 1.5v9l8-4.5z"/>';
   mPlay.setAttribute('aria-label', on?'Pause':'Play'); musicBtn.setAttribute('aria-pressed', String(on)); }
-function setMusicOpen(o){ musicPanel.hidden=!o; musicBtn.setAttribute('aria-expanded',String(o)); if (o){ setLayersOpen(false); setSystemsOpen(false); fitPopup(musicPanel); } }
+function setMusicOpen(o){ musicPanel.hidden=!o; musicBtn.setAttribute('aria-expanded',String(o)); if (o){ setLayersOpen(false); setSystemsOpen(false); setChatOpen(false); fitPopup(musicPanel); } }
 musicBtn.addEventListener('click', () => setMusicOpen(musicPanel.hidden));
 mPlay.addEventListener('click', () => MUSIC.el.paused ? musicPlay() : musicPause());
 let seeking=false; mSeek.addEventListener('input', () => { seeking=true; mTime.textContent=fmtClock(+mSeek.value); });
@@ -2624,7 +2641,59 @@ stringColors.value=SHOW.stringColors; aspectKey.hidden = SHOW.stringColors!=='as
 stringColors.addEventListener('change', () => { SHOW.stringColors=stringColors.value; aspectKey.hidden = SHOW.stringColors!=='aspects'; saveLayers(); });
 stringTrans.addEventListener('input', () => { SHOW.stringTrans=+stringTrans.value; stringTransOut.textContent=SHOW.stringTrans+'%'; saveLayers(); });
 document.getElementById('watchOrbits').addEventListener('click', () => { unitIdx=5; setDir(1); setLayersOpen(false); hideHint(); });
-const setLayersOpen = o => { layersEl.hidden=!o; layersBtn.setAttribute('aria-expanded', String(o)); if (o){ setSystemsOpen(false); if (typeof setMusicOpen==='function') setMusicOpen(false); fitPopup(layersEl); } };
+const setLayersOpen = o => { layersEl.hidden=!o; layersBtn.setAttribute('aria-expanded', String(o)); if (o){ setSystemsOpen(false); if (typeof setMusicOpen==='function') setMusicOpen(false); setChatOpen(false); fitPopup(layersEl); } };
+// ---------- Ether: a guide who answers questions, using Claude when the page is opened in Claude ----------
+const chatBtn=document.getElementById('chatBtn'), chatEl=document.getElementById('etherChat'), chatLog=document.getElementById('chatLog'), chatForm=document.getElementById('chatForm'),
+  chatIn=document.getElementById('chatIn'), chatSend=document.getElementById('chatSend'), chatStop=document.getElementById('chatStop'), chatNote=document.getElementById('chatNote');
+function setChatOpen(o){ chatEl.hidden=!o; chatBtn.setAttribute('aria-expanded',String(o)); if (o){ layersEl.hidden=true; layersBtn.setAttribute('aria-expanded','false'); setSystemsOpen(false); if (typeof musicPanel!=='undefined'){ musicPanel.hidden=true; musicBtn.setAttribute('aria-expanded','false'); } fitPopup(chatEl); chatIn.focus(); } }
+chatBtn.addEventListener('click', () => setChatOpen(chatEl.hidden));
+let etherSample = null, chatTurns = [], chatCtl = null;
+(async () => { try { etherSample = window.claude && window.claude.use ? await window.claude.use('sample') : null; } catch(e){ etherSample = null; }
+  if (!etherSample){ chatNote.textContent = 'Ether answers when Ether’s View is opened in Claude.'; chatSend.disabled = true; } })();
+const ETHER_RULES = `You are Ether, the guide inside "Ether's View", an interactive astronomy and astrology explorer made by Tony Parker (the artist and musician Ether). It runs from the Big Bang through the Moon, planets, moons, asteroids, the Kuiper Belt and Oort Cloud, nearby star systems (including double-sun systems), nebulae and black holes, out to the Milky Way, with Sagittarius A* at its center.
+How to answer: warm, clear and accurate, in plain language, usually under 140 words. Plain text only, no markdown headings or tables; short lists are fine. Ground answers in the "App state" given with each question (the date shown, the zodiac in use, positions, alignments, what is on screen). Astronomy: give real, current science and say when something is uncertain. Astrology: the app uses the sidereal (Nirayana, Lahiri) zodiac unless the state says tropical; present meanings as tradition and symbolism, not measured physical effects. If the person asks to see, visit, show or go to an object, call the go_to tool with its name, then answer in a sentence. If they ask about another date, you may call set_date. Never invent app features.`;
+function etherState(){
+  const deep=document.getElementById('deepYear'), date = deep && !deep.hidden ? deep.textContent : new Date(simTime).toUTCString().replace(' GMT',' UTC');
+  const rows=[...posTable.querySelectorAll('tr')].map(r => r.innerText.replace(/\s+/g,' ').trim()).filter(Boolean).slice(0,12).join('; ');
+  const al = alignPairs.slice(0,4).map(p => `${alName(AL_KEYS[p.i])} and ${alName(AL_KEYS[p.j])} ${p.opp?'opposite each other across':'lined up with'} the Sun (${p.d.toFixed(1)}°)`).join('; ') || 'none within 4°';
+  const info = infoKey ? BODY[infoKey].name+' ('+BODY[infoKey].type+')' : 'none';
+  return `Date shown: ${date}. Zodiac: ${sidereal()?'sidereal (Nirayana, Lahiri)':'tropical'}. View: ${document.getElementById('region').textContent}, ${document.getElementById('dist').textContent} from ${document.getElementById('focusName')?.textContent||'center'}. Details open for: ${info}.
+Geocentric positions: ${rows}.
+Planet alignments as seen from the Sun: ${al}.
+Sky report: ${document.getElementById('skyReport').innerText.replace(/\s+/g,' ').slice(0,700)}`;
+}
+const findBody = name => { const q=String(name||'').toLowerCase().trim(); if (!q) return null;
+  return BODY_ORDER.find(k => BODY[k].name.toLowerCase()===q) || BODY_ORDER.find(k => BODY[k].name.toLowerCase().startsWith(q)) || BODY_ORDER.find(k => (BODY[k].name+' '+(BODY[k].alias||'')).toLowerCase().includes(q)); };
+const ETHER_TOOLS = [
+  { name:'go_to', description:'Fly the view to a named object in the app (a planet, moon, asteroid, star system, nebula, black hole, the Asteroid Belt, Kuiper Belt or Oort Cloud) and open its details. Returns what it flew to.',
+    inputSchema:{ type:'object', properties:{ name:{ type:'string', description:'The object name, e.g. "Saturn", "Titan", "Kepler-16", "Sagittarius A*"' } }, required:['name'] },
+    execute: ({ name }) => { const k=findBody(name); if (!k){ const st=STOPS.find(s => s.label.toLowerCase().includes(String(name).toLowerCase())); if (st){ closeInfo(); flyTo(st); return 'Flying to '+st.label; } throw new Error('No object named '+name+' in the app'); } selectBody(k); return 'Flying to '+BODY[k].name; } },
+  { name:'set_date', description:'Set the app clock to a date and time (ISO 8601, e.g. 2027-03-20T12:00:00Z) so positions show that moment. Returns the date set.',
+    inputSchema:{ type:'object', properties:{ iso:{ type:'string' } }, required:['iso'] },
+    execute: ({ iso }) => { const ms=Date.parse(String(iso)); if (!isFinite(ms)) throw new Error('Not a date: '+iso); simTime=clamp(ms,TMIN,TMAX); updateEphemeris(simTime); updateSkyPanel(); refreshDateUI(); return 'Date set to '+new Date(simTime).toISOString(); } } ];
+function chatBubble(cls, text){ const p=document.createElement('p'); p.className='chatmsg '+cls; p.textContent=text; chatLog.appendChild(p); chatLog.scrollTop=chatLog.scrollHeight; return p; }
+const CHAT_ERR = { rate_limited:'Ether needs a short rest: too many questions at once. Try again in a moment.', session_expired:'Please sign in to Claude again, then ask.', refused:'Ether can’t answer that one. Try asking another way.', empty_completion:'Ether had no answer. Try asking another way.', prompt_too_large:'That was too long. Try a shorter question or clear the chat.' };
+chatForm.addEventListener('submit', async e => { e.preventDefault();
+  const q=chatIn.value.trim(); if (!q || !etherSample || chatCtl) return;
+  chatIn.value=''; chatBubble('you', q); const out=chatBubble('ether wait', 'Thinking…');
+  chatTurns.push({ role:'user', content:q }); chatTurns=chatTurns.slice(-12); if (chatTurns[0].role!=='user') chatTurns.shift();
+  const turns=[{ role:'user', content:ETHER_RULES }, ...chatTurns.slice(0,-1), { role:'user', content:'App state now:\n'+etherState()+'\n\nQuestion: '+q }];
+  chatCtl=new AbortController(); chatSend.hidden=true; chatStop.hidden=false; chatNote.textContent='';
+  const lim = await etherSample.limits().catch(() => null), tools = lim && lim.tools ? ETHER_TOOLS : undefined;
+  try {
+    const r=await etherSample(turns, { signal:chatCtl.signal, tools, modelTier:'quick', onText:({ text }) => { out.classList.remove('wait'); out.textContent=text; chatLog.scrollTop=chatLog.scrollHeight; } });
+    out.classList.remove('wait'); out.textContent=r.text; chatTurns.push({ role:'assistant', content:r.text });
+    if (r.truncated) chatNote.textContent='Ether’s answer was cut short; ask for less at a time.';
+  } catch(err){
+    const c=err && err.code; out.classList.remove('wait'); out.textContent = err && err.text ? err.text : '';
+    if (c==='cancelled'){ if (!out.textContent) out.remove(); }
+    else if (['not_granted','sampling_disabled','not_declared','capability_disabled','capability_removed'].includes(c)){ out.remove(); chatNote.textContent='Ether is turned off for this page. Allow Claude for this artifact to ask questions.'; chatSend.disabled=true; }
+    else { if (!out.textContent) out.remove(); chatNote.textContent = CHAT_ERR[c] || 'Ether lost the connection. Please try again.'; }
+    chatTurns.pop();
+  } finally { chatCtl=null; chatSend.hidden=false; chatStop.hidden=true; chatIn.focus(); }
+});
+chatStop.addEventListener('click', () => chatCtl && chatCtl.abort());
+document.getElementById('chatClear').addEventListener('click', () => { if (chatCtl) chatCtl.abort(); chatTurns=[]; chatLog.querySelectorAll('.chatmsg:not(:first-child)').forEach(n => n.remove()); chatNote.textContent=etherSample?'':chatNote.textContent; });
 const systemsBtn=document.getElementById('systemsBtn'), systemsEl=document.getElementById('systems'), sysList=document.getElementById('sysList');
 let sysFilter='all';
 function renderSystems(){
@@ -2673,6 +2742,45 @@ function skyInfo(k){
   return { v, el, lim, east, where:zodConst(lon), vis };
 }
 const ALIGNED = new Set();
+// Alignments between any two planets as seen from the Sun (within 4°, side by side or facing each other across the Sun),
+// as in Ether's Field: a golden ring rolls out from the Sun when a new alignment begins, and the two worlds pulse gold.
+const AL_KEYS = ['mercury','venus','emb','mars','jupiter','saturn','uranus','neptune'], AL_ORB = 4;
+const ALIGN2 = new Set(); let alignKey = '', alignClock = 0, alignPairs = [];
+const alName = k => k==='emb' ? 'Earth' : BODY[k].name;
+const alPos = k => k==='emb' ? eph.earth : eph.p[k];
+const ringGeo = new THREE.RingGeometry(0.93, 1, 160);
+const mkRing = () => { const m=new THREE.Mesh(ringGeo, new THREE.MeshBasicMaterial({ color:0xffd27a, transparent:true, opacity:0, blending:THREE.AdditiveBlending, depthWrite:false, side:THREE.DoubleSide })); m.frustumCulled=false; m.visible=false; m.renderOrder=40; scene.add(m); return m; };
+const SUN_RIP = [0,1].map(() => ({ m:mkRing(), t:-1, R:0 })), BODY_PULSE = Array.from({ length:16 }, mkRing);
+const alignToast = document.getElementById('alignToast'); let toastT = 0;
+function updateAlign(adt){
+  alignClock += adt;
+  const lon = AL_KEYS.map(k => { const P=alPos(k); return Math.atan2(P.y-eph.sun.y, P.x-eph.sun.x); }), pairs=[];
+  for (let i=0;i<8;i++) for (let j=i+1;j<8;j++){ let dd=Math.abs(lon[i]-lon[j])%(2*Math.PI); if (dd>Math.PI) dd=2*Math.PI-dd; dd/=DEG;
+    if (dd<AL_ORB) pairs.push({ i, j, d:dd, opp:false }); else if (180-dd<AL_ORB) pairs.push({ i, j, d:180-dd, opp:true }); }
+  pairs.sort((a,b) => a.d-b.d); alignPairs = pairs;
+  ALIGN2.clear(); pairs.forEach(p => { ALIGN2.add(AL_KEYS[p.i]); ALIGN2.add(AL_KEYS[p.j]); });
+  const key = pairs.map(p => p.i+'-'+p.j).join(',');
+  const fresh = pairs.filter(p => !(','+alignKey+',').includes(','+p.i+'-'+p.j+','));
+  if (fresh.length && SHOW.alignPulse){
+    const p=fresh[0], A=alName(AL_KEYS[p.i]), B=alName(AL_KEYS[p.j]);
+    const rip = SUN_RIP.find(r => r.t<0) || SUN_RIP.reduce((a,b) => a.t>b.t ? a : b);
+    rip.t=0; rip.R=Math.max(alPos(AL_KEYS[p.i]).distanceTo(eph.sun), alPos(AL_KEYS[p.j]).distanceTo(eph.sun))*1.12;
+    alignToast.textContent = p.opp ? `${A} and ${B} face each other across the Sun · ${p.d.toFixed(1)}°` : `${A} and ${B} line up with the Sun · ${p.d.toFixed(1)}°`;
+    alignToast.hidden=false; toastT=6;
+  }
+  alignKey = key;
+  if (toastT>0){ toastT -= adt || 0.016; if (toastT<=0) alignToast.hidden=true; }
+  for (const r of SUN_RIP) if (r.t>=0){ r.t += adt/5; if (r.t>1) r.t=-1; }
+}
+function drawAlign(d){
+  for (const r of SUN_RIP){ const on = r.t>=0 && SHOW.alignPulse; r.m.visible=on; if (!on) continue;
+    const e=1-Math.pow(1-r.t,3); place(r.m, eph.sun, Math.max(r.R*e, 0.05*AU), d); r.m.quaternion.identity(); r.m.material.opacity=0.85*(1-r.t); }
+  let n=0;
+  if (SHOW.alignPulse) for (const k of ALIGN2){ const P=alPos(k), R=k==='emb'?R_EARTH:BODY[k].R, base=Math.max(R*2.6, camWorld.distanceTo(P)*0.018);
+    for (let j=0;j<2 && n<BODY_PULSE.length;j++,n++){ const m=BODY_PULSE[n], ph=(alignClock*0.55 + j*0.5)%1;
+      m.visible=true; place(m, P, base*(1+1.6*ph), d); m.quaternion.copy(camera.quaternion); m.material.opacity=0.75*(1-ph)*(1-ph); } }
+  for (;n<BODY_PULSE.length;n++) BODY_PULSE[n].visible=false;
+}
 const PL_NAME = { mercury:'Mercury', venus:'Venus', mars:'Mars', jupiter:'Jupiter', saturn:'Saturn', uranus:'Uranus', neptune:'Neptune', moon:'Moon' };
 function skyReport(){
   const ks=['moon','mercury','venus','mars','jupiter','saturn','uranus','neptune'], I=Object.fromEntries(ks.map(k=>[k,skyInfo(k)]));
@@ -3285,7 +3393,7 @@ function frame(now){
   if (simTime > TMAX){ simTime=TMAX; if (dir>0) setDir(0); }
   if (simTime < TMIN){ simTime=TMIN; if (dir<0) setDir(0); }
   if (SHOW.beltSwirl) beltDemoDays = (beltDemoDays + adt*25) % 7305000; asteroids.material.uniforms.uTw.value = (asteroids.material.uniforms.uTw.value + adt) % 6283.2;
-  updateEphemeris(simTime); updateDwarfs(eph.jd); updateAsteroids(eph.jd); updateCraft(simTime); if (SHOW.orbitsFast) orbitDemoDays += adt*0.35; updateMoonsExo(simTime);
+  updateEphemeris(simTime); updateAlign(adt); updateDwarfs(eph.jd); updateAsteroids(eph.jd); updateCraft(simTime); if (SHOW.orbitsFast) orbitDemoDays += adt*0.35; updateMoonsExo(simTime);
 
   if (flight){
     flight.t+=dt; const u=clamp(flight.t/flight.dur,0,1); flight.u=u; flight.s=smooth(0.2,0.8,u);
@@ -3403,7 +3511,8 @@ function frame(now){
   // orbits & belts
   refreshPlanetOrbits(eph.T);
   const orbA = SHOW.orbits ? rangeAlpha([[8.6,16]], zoom) : 0;
-  orbits.forEach(o => { o.visible=orbA>0.01; place(o, eph.sun, AU, d); const gold=ALIGNED.has(o.userData.key); o.material.color.set(gold?0xffcf6a:o.userData.col); o.material.opacity=(gold?0.9:o.userData.base)*orbA; });
+  orbits.forEach(o => { o.visible=orbA>0.01; place(o, eph.sun, AU, d); const gold=ALIGNED.has(o.userData.key) || ALIGN2.has(o.userData.key); o.material.color.set(gold?0xffcf6a:o.userData.col); o.material.opacity=(gold?0.9:o.userData.base)*orbA; });
+  drawAlign(d);
   DWARFS.forEach(dw => { dw.orbit.visible=orbA>0.01; place(dw.orbit, eph.sun, AU, d); dw.orbit.material.opacity=0.32*orbA;
     if(camWorld.distanceTo(dw.P)<dw.R*600) loadVisibleBodyMap(dw.k); place(dw.mesh, dw.P, dw.R, d); if (dw.shape){ const s=dw.R/d; dw.mesh.scale.set(s*dw.shape[0], s*dw.shape[1], s*dw.shape[2]); }
     orientBody(dw.mesh, spinFrame(Z, ((hours/dw.rot) + (SHOW.spin?spinT/24:0))*Math.PI*2 % (Math.PI*2), V()), Z); });
