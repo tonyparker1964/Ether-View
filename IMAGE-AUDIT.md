@@ -20,3 +20,5 @@ AI reconstructions use characteristic surface types (Io's sulfur and volcanism, 
 ## Verification
 
 `body-image-manifest.json` records each replacement body's filename, source and output dimensions, byte count and SHA-256 checksum. `node verify-images.cjs` verifies complete catalog coverage, distinct file assignments and image bytes, preservation of the original portraits, and removal of shared moon/exoplanet texture assignments. Browser checks verify the generated images and full-size viewer.
+
+Browser verification completed for all 118 object routes and 12 destinations. All 56 Sun/planet/dwarf-planet/moon/exoplanet images opened successfully at a 3840-pixel maximum dimension, with matching body names and 56 distinct image-source fingerprints. All 14 preserved telescope images loaded. All 16 layer/name switches toggled and restored, and all 15 date-step units responded. The viewport-popup fix keeps Layers, Star systems and Music within the screen and above the toolbar on narrow layouts.
