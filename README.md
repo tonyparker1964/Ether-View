@@ -28,4 +28,27 @@ then visit http://localhost:8000.
 - Moon surface map: © 2010–2017 [Solar System Scope](https://www.solarsystemscope.com/textures/), based on NASA imagery, [CC BY 4.0](https://creativecommons.org/licenses/by/4.0/).
 - Planet positions: NASA JPL approximate Keplerian elements. Star, nebula, black-hole and exoplanet values from published catalogs.
 - 3D rendering: [three.js](https://threejs.org) (MIT), loaded from cdnjs.
-- Nebula images are generated for this app in the style of telescope views. Astrological meanings are offered for reflection.
+- Nebulae and the Pleiades use credited telescope observations, with source links in each details panel. Telescope filters may produce enhanced or assigned colors. Astrological meanings are offered for reflection.
+
+## Verification
+
+Run `node verify.cjs` for orbital geometry, quantum-string precision and exact-name search regressions. JPL short-range elements are fitted for 1800–2050; deep-time positions remain illustrative.
+
+## Telescope image sources
+
+- [orion](https://science.nasa.gov/asset/hubble/orion-nebula-2/) — NASA, ESA, M. Robberto (STScI/ESA) and the Hubble Space Telescope Orion Treasury Project Team.
+- [lagoon](https://science.nasa.gov/asset/hubble/lagoon-nebula-visible-light-view/) — NASA, ESA, and STScI.
+- [crab](https://science.nasa.gov/asset/hubble/crab-nebula-3/) — NASA, ESA, and the Hubble Heritage Team (STScI/AURA).
+- [trifid](https://science.nasa.gov/asset/hubble/trifid-nebula-wide-field-camera-3-image/) — NASA, ESA, STScI; Image Processing: Joseph DePasquale (STScI).
+- [rosette](https://science.nasa.gov/asset/hubble/dark-clouds-in-rosette-nebula/) — NASA, ESA, STScI; Image Processing: Joseph DePasquale (STScI).
+- [carina](https://science.nasa.gov/asset/hubble/carina-nebula/) — NOAO, AURA, NSF, and N. Smith (University of Arizona).
+- [tarantula](https://science.nasa.gov/asset/webb/tarantula-nebula-nircam-image/) — NASA, ESA, CSA, STScI, Webb ERO Production Team.
+- [pleiades](https://science.nasa.gov/asset/hubble/hubble-refines-distance-to-the-pleiades-star-cluster/) — NASA, ESA and AURA/Caltech.
+- [northamerica](https://science.nasa.gov/photojournal/the-case-of-the-disappearing-continent/) — NASA/JPL-Caltech.
+- [catseye](https://science.nasa.gov/asset/hubble/cats-eye-nebula/) — NASA, ESA, and the Hubble Heritage Team (STScI/AURA).
+- [horsehead](https://science.nasa.gov/asset/hubble/the-horsehead-nebula/) — NASA, NOAO, ESA and the Hubble Heritage Team (STScI/AURA); K. Noll, C. Luginbuhl, F. Hamilton.
+- [eagle](https://science.nasa.gov/asset/hubble/eagle-nebula-pillars-of-creation/) — NASA, ESA, and the Hubble Heritage Team (STScI/AURA).
+- [ring](https://science.nasa.gov/asset/hubble/hubble-captures-a-ring/) — NASA, ESA, and the Hubble Heritage (STScI/AURA)-ESA/Hubble Collaboration.
+- [helix](https://science.nasa.gov/asset/hubble/the-helix-nebula-a-gaseous-envelope-expelled-by-a-dying-star/) — NASA, ESA, C.R. O'Dell (Vanderbilt University), M. Meixner and P. McCullough (STScI).
+
+NASA web renditions are bundled locally; the Tarantula image is encoded as JPEG for download size. The renderer preserves image proportions and fades display edges. Cloud depth, moon/exoplanet phases, deep time and black-hole models remain illustrative. Planet and Sun artwork is preserved.
