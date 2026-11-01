@@ -2234,6 +2234,7 @@ const narrow = () => matchMedia('(max-width:760px)').matches;
 function fitPopup(el){
   if(!el || el.hidden || !el.classList.contains('layers')) return;
   const anchor=document.getElementById('findPanel').getBoundingClientRect();
+  document.getElementById('hud').appendChild(el);el.style.pointerEvents='auto';
   const maxH=Math.max(80,Math.min(innerHeight-24,innerHeight*.72,512));
   el.style.position='fixed';el.style.right='auto';el.style.maxHeight=maxH+'px';
   const width=el.getBoundingClientRect().width, height=Math.min(el.scrollHeight+2,maxH);
@@ -2292,6 +2293,7 @@ function makePanelCollapsible(panel,label,detail=false){
     body.hidden=collapsed;panel.classList.toggle('is-collapsed',collapsed);
     button.setAttribute('aria-expanded',String(!collapsed));button.setAttribute('aria-label',(collapsed?'Expand ':'Collapse ')+label);button.title=(collapsed?'Expand ':'Collapse ')+label;
     if(collapsed && panel.id==='findPanel'){
+      ['layers','systems','musicPanel'].forEach(id=>document.getElementById(id).hidden=true);
       body.querySelectorAll('[role="dialog"],[role="listbox"]').forEach(el=>el.hidden=true);
       body.querySelectorAll('#q,#systemsBtn,#musicBtn,#layersBtn').forEach(el=>el.setAttribute('aria-expanded','false'));
     }
