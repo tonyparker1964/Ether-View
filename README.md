@@ -4,7 +4,9 @@ An interactive journey through the universe, by **Ether**. Begin at the Big Bang
 
 ## Features
 
-- **The Big Bang:** a particle simulation of the universe's history, from inflation to the cosmic web, timed to the song.
+- **The Big Bang:** a particle simulation of the universe's history, from inflation through the birth of the Sun and planets to the cosmic web, timed to the song, with faint quantum strings linking galaxies and worlds.
+- **Living planets:** Saturn's rings orbit at their own speeds, with spokes, shadows and the north polar hexagon storm; Jupiter's bands flow around a turning Great Red Spot; Earth's clouds drift and change.
+- **Your music:** add songs from your device to the playlist; they stay in your browser.
 - **Real sky positions:** the Sun, Moon and planets for any date, with a sky report (conjunctions, oppositions, planet parades, Moon phase) and astrological aspects.
 - **Planet meanings:** archetypes, signs, rulerships, days, metals, chakras and Solfeggio tones, from Ether's Field.
 - **Time travel:** step or jump by seconds up to terayears, from the Big Bang to 100 trillion years ahead.
