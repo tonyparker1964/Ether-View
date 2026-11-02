@@ -150,6 +150,13 @@ body{background:var(--void);color:var(--ink);font-family:var(--f-ui);overflow:hi
 #scaleBar .btn[aria-pressed="true"]{color:#1a1206;background:var(--sun);border-color:var(--sun)}
 #hud.boot #scaleBar{display:none}
 @media (max-width:760px){ #scaleBar .sbearth{display:none} }
+#skyPrompt{pointer-events:auto;position:fixed;left:50%;top:calc(106px + env(safe-area-inset-top,0px));transform:translateX(-50%);z-index:8;display:flex;align-items:center;gap:12px;padding:6px 6px 6px 14px;border-radius:999px;background:rgba(9,11,19,.82);border:1px solid rgba(150,176,240,.5);color:#dbe4ff;font:500 calc(12.5px*var(--fs))/1.3 var(--f-ui)}
+#skyPrompt .btn{color:#1a1206;background:var(--sun);border-color:var(--sun);height:28px}
+.skybtns{display:flex;flex-wrap:wrap;gap:6px;margin:12px 0 2px}.skybtns .btn{flex:1 1 auto}
+.links p{margin:4px 0;display:flex;flex-wrap:wrap;gap:5px;align-items:center}.links span{flex:0 0 100%;font:500 calc(10px*var(--fs))/1.2 var(--f-ui);letter-spacing:.14em;text-transform:uppercase;color:var(--ink-dim)}
+.lbl.skytarget span{color:#ffe2a8}.lbl.skytarget::after{content:'';position:absolute;left:-15px;top:50%;width:26px;height:26px;margin-top:-13px;border:1.5px solid rgba(255,214,140,.9);border-radius:50%;animation:skyring 1.8s ease-out infinite}
+@keyframes skyring{0%{transform:scale(.6);opacity:1}100%{transform:scale(1.8);opacity:0}}
+@media (prefers-reduced-motion:reduce){.lbl.skytarget::after{animation:none}}
 #alignToast{position:fixed;left:50%;top:calc(64px + env(safe-area-inset-top,0px));transform:translateX(-50%);z-index:8;max-width:calc(100vw - 32px);padding:8px 14px;border-radius:999px;background:rgba(40,30,10,.82);border:1px solid rgba(255,210,120,.55);color:#ffe2a8;font:500 calc(12.5px*var(--fs))/1.3 var(--f-ui);letter-spacing:.03em;pointer-events:none;box-shadow:0 0 24px rgba(255,200,100,.25)}
 .scats{display:flex;flex-wrap:wrap;gap:5px;padding:4px 4px 8px;border-bottom:1px solid var(--line);margin-bottom:4px;cursor:default!important;background:none!important}
 .scats .chip{padding:5px 9px;font-size:calc(11px*var(--fs))}
@@ -412,6 +419,7 @@ body{background:var(--void);color:var(--ink);font-family:var(--f-ui);overflow:hi
 
   <div id="alignToast" hidden role="status"></div>
   <div id="storyToast" hidden role="status"></div>
+  <div id="skyPrompt" hidden><span id="skyPromptText"></span><button type="button" class="btn text" id="skyInto">Zoom in &#9656;</button></div>
   <div id="scaleBar" aria-live="off"><div class="sbcol"><div class="sbrow"><span class="sbline" id="sbLine"></span><span id="sbText">1 AU</span></div><span class="sbearth" id="sbEarth"></span></div><button type="button" class="btn text" id="trueBtn" aria-pressed="false" title="Show every body at its true size: no glows or enlarged dots">True scale</button></div>
   <section class="find panel" id="findPanel" aria-label="Search" data-drag>
     <span class="grip" aria-hidden="true" title="Drag to move"></span>
@@ -1769,6 +1777,8 @@ void main(){
   gl_FragColor=vec4(col, a);
 }`;
 const tmpQ = new THREE.Quaternion();
+const skyPrompt=document.getElementById('skyPrompt'), skyPromptText=document.getElementById('skyPromptText');
+document.getElementById('skyInto').addEventListener('click', () => { if (skyTarget) flyInto(skyTarget); });
 const sbLine=document.getElementById('sbLine'), sbText=document.getElementById('sbText'), sbEarth=document.getElementById('sbEarth'), trueBtn=document.getElementById('trueBtn');
 const SGRA_U = { uMap:{ value:null }, uT:{ value:0 }, uReady:{ value:0 } };
 new THREE.TextureLoader().load('img/sgra-4k.jpg', t => { t.anisotropy=MAX_ANISO; t.wrapS=t.wrapT=THREE.ClampToEdgeWrapping; SGRA_U.uMap.value=t; SGRA_U.uReady.value=1; });
@@ -2027,7 +2037,9 @@ const CONST = [
  ['Sagittarius',[[271.45,-30.42,'Alnasl'],[275.25,-29.83,'Kaus Media'],[276.04,-34.38,'Kaus Australis'],[276.99,-25.42,'Kaus Borealis'],[281.41,-26.99,null],[283.82,-26.30,'Nunki'],[286.74,-27.67,null],[285.65,-29.88,'Ascella']],[[0,1,2,0],[1,3,4,1],[4,5,6,7,4],[2,7]]],
  ['Capricornus',[[304.51,-12.54,'Algedi'],[305.25,-14.78,'Dabih'],[311.52,-25.27,null],[312.96,-26.92,null],[321.67,-22.41,null],[326.76,-16.13,'Deneb Algedi'],[325.02,-16.66,'Nashira'],[316.49,-17.23,null]],[[0,1,2,3,4,5,6,7,0]]],
  ['Aquarius',[[311.92,-9.50,'Albali'],[322.89,-5.57,'Sadalsuud'],[331.45,-0.32,'Sadalmelik'],[335.41,-1.39,null],[337.21,-0.02,null],[338.84,-0.12,null],[343.15,-7.58,null],[343.66,-15.82,'Skat']],[[0,1,2,3,4,5],[2,6,7]]],
- ['Pisces',[[349.29,3.28,null],[351.73,1.26,null],[355.51,1.78,null],[354.99,5.63,null],[351.99,6.38,null],[359.83,6.86,null],[12.17,7.59,null],[15.74,7.89,null],[25.36,5.49,null],[30.51,2.76,'Alrescha'],[26.35,9.16,null],[22.87,15.35,null]],[[0,1,2,3,4,0],[3,5,6,7,8,9,10,11]]]
+ ['Pisces',[[349.29,3.28,null],[351.73,1.26,null],[355.51,1.78,null],[354.99,5.63,null],[351.99,6.38,null],[359.83,6.86,null],[12.17,7.59,null],[15.74,7.89,null],[25.36,5.49,null],[30.51,2.76,'Alrescha'],[26.35,9.16,null],[22.87,15.35,null]],[[0,1,2,3,4,0],[3,5,6,7,8,9,10,11]]],
+ ['Hercules',[[250.32,31.60,null],[250.72,38.92,null],[258.76,36.81,null],[255.07,30.93,null],[247.55,21.49,'Kornephoros'],[258.76,24.84,'Sarin'],[258.66,14.39,'Rasalgethi'],[269.06,37.25,null],[264.87,46.01,null],[248.53,42.44,null],[244.94,46.31,null],[266.61,27.72,null]],[[0,1,2,3,0],[0,4],[3,5,6],[5,11],[2,7,8],[1,9,10]]],
+ ['Tucana',[[334.63,-60.26,null],[349.36,-58.24,null],[7.89,-62.96,null],[5.02,-64.87,null],[359.98,-65.58,null],[336.83,-64.97,null]],[[0,1,2,3,4,5,0]]]
 ];
 const constellations = (() => {
   const seg=[], dots=[];
@@ -2289,7 +2301,69 @@ const REGION_BODIES = {
     note:'Voyager 1, the most distant spacecraft, will not reach the inner Oort Cloud for about 300 years, and will take some 30,000 years to cross it.' }
 };
 Object.entries(REGION_BODIES).forEach(([k,r]) => { BODY[k] = Object.assign({ R:R_SUN, group:'region', P:eph.sun }, r); });
+// ---------- star clusters ----------
+const CLUSTERS = [
+  { k:'pleiades', body:'n:pleiades', name:'Pleiades', ra:56.75, dec:24.12, ly:444, R:8, age:'About 100 million years', con:'Taurus', type:'Open star cluster · M45', count:'Over 1,000 stars; about 7 bright enough to see by eye',
+    note:'Brilliant blue stars wrapped in delicate reflection nebulosity. The blue haze is a cloud of dust the cluster is passing through, lit by its hot young stars, not the cloud they formed from.', links:['cl:hyades'] },
+  { k:'hyades', name:'Hyades', ra:66.75, dec:15.87, ly:153, R:10, age:'About 625 million years', con:'Taurus', type:'Open star cluster · Melotte 25', count:'Several hundred stars, including four orange giants', N:420, a:6, pop:'mid',
+    note:'The nearest open cluster to Earth, sprawling across the sky. Its brightest stars make the V of the Bull’s face in Taurus. Bright orange Aldebaran sits in the V but is only 65 light-years away: a foreground star, not a member.', links:['n:pleiades'] },
+  { k:'beehive', name:'Beehive Cluster', ra:130.10, dec:19.67, ly:577, R:11, age:'About 600–700 million years', con:'Cancer', type:'Open star cluster · M44 (Praesepe)', count:'About 1,000 stars', N:900, a:6, pop:'mid',
+    note:'A rich field of stars, visible to the eye as a faint misty patch in Cancer. Galileo first resolved it into stars in 1609.' },
+  { k:'trapezium', name:'Trapezium', ra:83.82, dec:-5.39, ly:1344, R:1.5, age:'Under 1 million years (about 300,000)', con:'Orion', type:'Young star cluster · inside the Orion Nebula', count:'Four brilliant stars at the heart of about 2,000 young stars', N:900, a:0.7, pop:'young', trap:true,
+    note:'The young stars at the heart of the glowing Orion Nebula; their ultraviolet light makes the nebula shine. The brightest, θ¹ Orionis C, is about 200,000 times as luminous as the Sun.', links:['n:orion'],
+    img:'img/cl-trapezium.jpg', credit:'NASA, ESA, M. Robberto (STScI/ESA) and the Hubble Space Telescope Orion Treasury Project Team (detail of the Orion Nebula)' },
+  { k:'double', name:'Double Cluster', ra:35.17, dec:57.14, ly:7500, R:60, age:'About 14 million years', con:'Perseus', type:'Twin open clusters · NGC 869 and NGC 884', count:'Several hundred stars each, many of them blue supergiants', pop:'super',
+    parts:[[34.75,57.13,7500],[35.58,57.15,7600]], N:650, a:9,
+    note:'Two young clusters side by side in Perseus, near Cassiopeia, both visible to the naked eye on a dark night. They formed from the same cloud and lie a few hundred light-years apart.' },
+  { k:'m13', name:'Hercules Cluster', ra:250.42, dec:36.46, ly:22200, R:75, age:'About 11.7 billion years', con:'Hercules', type:'Globular cluster · M13', count:'Several hundred thousand stars', N:12000, a:8.5, pop:'old',
+    note:'A dense globe of ancient stars, the finest globular cluster in the northern sky. In 1974 the Arecibo radio message was beamed toward it; it will arrive in about 25,000 years.' },
+  { k:'omega', body:'n:omega', name:'Omega Centauri', ra:201.70, dec:-47.48, ly:17090, R:80, age:'About 11.5 billion years', con:'Centaurus', type:'Globular cluster · NGC 5139', count:'About 10 million stars', N:16000, a:12, pop:'old',
+    note:'The Milky Way’s largest and brightest globular cluster, a spectacular, densely populated stellar world. Its stars span several ages, so it may be the core of a dwarf galaxy the Milky Way absorbed.' },
+  { k:'47tuc', name:'47 Tucanae', ra:6.02, dec:-72.08, ly:14700, R:65, age:'About 12–13 billion years', con:'Tucana', type:'Globular cluster · NGC 104', count:'Several hundred thousand stars', N:14000, a:10, pop:'old',
+    note:'Another magnificent globular cluster, second only to Omega Centauri. It appears beside the Small Magellanic Cloud but is in our own galaxy, about 13 times closer.', links:['g:smc'] } ];
+const CL_RENDER = 'Simulated telescope view, rendered from the cluster’s real size, star count and star colors (not a photograph)';
+CLUSTERS.forEach(c => {
+  c.P = radec(c.ra,c.dec).multiplyScalar(c.ly*LY); c.key = c.body || ('cl:'+c.k);
+  if (!c.img){ c.img = c.k==='pleiades' ? null : 'img/cl-'+c.k+'.jpg'; c.credit = c.credit || CL_RENDER; }
+  const facts=[['Distance','About '+c.ly.toLocaleString()+' light-years'],['Age',c.age],['Constellation',c.con],['Stars',c.count],['Size','About '+(2*c.R)+' light-years across']];
+  if (c.body && BODY[c.body]) Object.assign(BODY[c.body], { group:'clu', tag:c.type.split(' · ')[0], facts, note:c.note, R:c.R*LY, con:c.con, type:c.type });
+  else BODY[c.key] = { name:c.name, ref:'the '+c.name, R:c.R*LY, type:c.type, group:'clu', far:true, P:c.P, dir:c.P.clone().normalize(), con:c.con, alias:'star cluster '+c.type+' '+c.con, tag:c.type.split(' · ')[0], facts, note:c.note };
+  if (c.img) window.PLANET_IMG[c.key] = { portrait:c.img, credit:c.credit };
+});
+// ---------- constellations as places in the sky ----------
+const CON_NOTE = { Orion:'The Hunter, one of the best-known patterns in the sky, home to the Orion Nebula, the Trapezium and the Horsehead Nebula.', Taurus:'The Bull, holding two famous clusters: the Pleiades on its shoulder and the Hyades forming its face.', Cancer:'The Crab, faint but home to the Beehive Cluster.', Perseus:'The hero Perseus, holding the Double Cluster near Cassiopeia.', Hercules:'The hero Hercules; the Hercules Cluster lies on the western side of the Keystone, its four-star center.', Centaurus:'The Centaur, home to Omega Centauri and Alpha Centauri, the nearest star system.', Tucana:'The Toucan, a southern constellation holding 47 Tucanae and the Small Magellanic Cloud.', Sagittarius:'The Archer, looking toward the center of the Milky Way and Sagittarius A*.' };
+CONST.forEach(c => { const P=c.center.clone().multiplyScalar(1000*LY), stars=c[1].map(st => st[2]).filter(Boolean);
+  BODY['k:'+c[0]] = { name:c[0], ref:c[0], R:20*LY, view:1000*LY/1.25, type:'Constellation', group:'const', far:true, P, dir:c.center.clone(), con:c[0], alias:'constellation stars '+stars.join(' '), tag:'Constellation', sky:true,
+    facts:[['Bright stars drawn', stars.length ? stars.join(', ') : c[1].length+' stars']], note:CON_NOTE[c[0]] || 'A pattern of stars as seen from Earth. Its stars lie at very different distances; only from here do they line up.' }; });
+// connections: constellation ↔ its clusters, nebulae, black holes, star systems and galaxies; plus hand-made links
+const LINKS = {};
+const link = (a,b) => { if (!BODY[a] || !BODY[b] || a===b) return; (LINKS[a] ||= new Set()).add(b); (LINKS[b] ||= new Set()).add(a); };
+Object.keys(BODY).forEach(k => { const b=BODY[k]; if (b.group!=='const' && b.con && BODY['k:'+b.con]) link('k:'+b.con, k); });
+link('n:orion','cl:trapezium'); link('n:orion','n:horsehead'); link('cl:47tuc','g:smc'); link('k:Tucana','g:smc'); link('n:pleiades','cl:hyades'); link('k:Sagittarius','b:sgra'); link('k:Centaurus','x:alphacen'); link('k:Centaurus','x:proxima');
+CLUSTERS.forEach(c => (c.links||[]).forEach(l => link(c.key,l)));
+// ---------- the clusters' stars in 3D (Pleiades keeps its photograph) ----------
+const clusterStars = (() => {
+  const P=[], T=[], L=[]; let seed=91; const rnd=()=>{ seed=(seed*16807)%2147483647; return seed/2147483647; };
+  const g=()=>{ let u=0; while(!u) u=rnd(); return Math.sqrt(-2*Math.log(u))*Math.cos(2*Math.PI*rnd()); };
+  const col = T => T>20000?[0.62,0.72,1]:T>9000?[0.78,0.85,1]:T>7000?[0.95,0.96,1]:T>5800?[1,0.96,0.86]:T>4800?[1,0.86,0.64]:[1,0.7,0.48];
+  const put = (v,temp,lum) => { P.push(v.x/LY,v.y/LY,v.z/LY); T.push(...col(temp)); L.push(starGlow(lum)); };
+  const plummer = a => { const u=Math.max(rnd(),1e-6), r=a/Math.sqrt(Math.pow(u,-2/3)-1); const z=2*rnd()-1, t=rnd()*Math.PI*2, s=Math.sqrt(1-z*z); return V(r*s*Math.cos(t), r*s*Math.sin(t), r*z).multiplyScalar(LY); };
+  for (const c of CLUSTERS){ if (!c.N) continue;
+    const centers = c.parts ? c.parts.map(([ra,dec,ly]) => radec(ra,dec).multiplyScalar(ly*LY)) : [c.P];
+    for (const C of centers) for (let i=0;i<c.N;i++){
+      const v=plummer(c.a).add(C); let Tk, lum;
+      if (c.pop==='old'){ const x=rnd(); if (x<0.012){ Tk=3900+rnd()*600; lum=200+rnd()*1500; } else if (x<0.03){ Tk=9000+rnd()*3000; lum=30+rnd()*40; } else { Tk=5200+rnd()*1200; lum=0.3+rnd()*2.5; } }
+      else if (c.pop==='mid'){ const x=rnd(); if (x<0.012){ Tk=4500; lum=80+rnd()*60; } else { Tk=4800+rnd()*4000; lum=0.3+Math.pow(rnd(),3)*40; } }
+      else if (c.pop==='super'){ const x=rnd(); if (x<0.02){ Tk=3800; lum=2e4+rnd()*4e4; } else if (x<0.12){ Tk=15000+rnd()*12000; lum=5e3+rnd()*6e4; } else { Tk=8000+rnd()*12000; lum=10+rnd()*800; } }
+      else { const x=rnd(); Tk = x<0.04 ? 20000+rnd()*15000 : 3200+rnd()*2500; lum = x<0.04 ? 500+rnd()*8000 : 0.05+rnd()*2; }
+      put(v,Tk,lum*({ old:8, mid:4, young:2, super:1 }[c.pop]||1)); }   // exposure, like a long-exposure photograph of the cluster
+    if (c.trap){ // the four Trapezium stars, about 0.1 ly across, θ1 Ori C brightest
+      [[0.02,0.03,0,4e4],[-0.03,0.01,0.01,2e5],[0.01,-0.04,0,1.5e4],[-0.01,-0.02,-0.02,2.5e4]].forEach(([x,y,z,lum]) => put(V(x,y,z).multiplyScalar(LY).add(c.P), 33000, lum)); }
+  }
+  const pts=pointCloud(new Float32Array(P), new Float32Array(T), new Float32Array(L), pointMat({ min:1, max:9, gain:1.2 })); return pts;
+})();
 const BODY_ORDER = Object.keys(BODY);
+CLUSTERS.forEach(c => { if (!c.body) addLabel(c.name,'neb', fixed(c.P), [[-9,21]], { key:c.key, sizeR:c.R*LY, cat:'deep' }); });
 addLabel('3I/ATLAS','body', () => C3I.P, [[6,19.5]], { sizeR:2800, key:'c:3i', cat:'asteroids' });
 AST.forEach(A => addLabel(A.name,'body', () => A.P, A.D>=200 ? [[9.6,13.2]] : [[6,13.2]], { sizeR:A.R, key:'a:'+A.k, cat:'asteroids', ...(A.D<200 ? { within:() => A.P, maxDist:0.35*AU } : {}) }));
 DWARFS.forEach(dw => addLabel(dw.name,'body', () => dw.P, dw.k==='ceres' ? [[9.5,13.6]] : [[11.2,15.6]], { occlude:true, sizeR:dw.R, key:dw.k }));
@@ -2356,7 +2430,7 @@ addLabel('Small Magellanic Cloud','star', fixed(galPos(...GAL.smc)), [[20.6,22]]
 const NAMED_SET = new Set(NAMED.map(n=>n[0]));
 const seenStar = new Set();
 CONST.forEach(c => {
-  { const p=V(); addLabel(c[0],'const', () => p.copy(camWorld).addScaledVector(swirlDir(c.center,tmpN), 950*Math.pow(10,zoom)), [[-9,16.8]], { occlude:true, sky:'constellations' }); }
+  { const p=V(); addLabel(c[0],'const', () => p.copy(camWorld).addScaledVector(swirlDir(c.center,tmpN), 950*Math.pow(10,zoom)), [[-9,16.8]], { occlude:true, sky:'constellations', key:'k:'+c[0] }); }
   c[1].forEach((st,i) => { if (!st[2] || NAMED_SET.has(st[2]) || seenStar.has(st[2])) return; seenStar.add(st[2]); const p=V(), dir=c.dirs[i];
     addLabel(st[2],'star', () => p.copy(camWorld).addScaledVector(swirlDir(dir,tmpN), 950*Math.pow(10,zoom)), [[-9,15.6]], { occlude:true, sky:'constellations', cat:'stars' }); });
 });
@@ -2479,7 +2553,12 @@ function startFlight(toState, toZ, view){
   flight = { from:zoom, to:toZ, peak, fromState, toState, t:0, u:0, s:0, view, dur: reduceMotion ? 0.8 : clamp(1.2+0.24*span, 1.2, 7.5) };
 }
 function flyTo(stop){ startFlight({ target:null, w:0 }, stop.z, stop.view); }
-function selectBody(k){ startFlight({ target:k, w:1 }, targetZoom(k), 'lit'); openInfo(k); }
+let skyTarget = null, zSky = 0;
+function selectBody(k){ if (BODY[k].sky){ locateSky(k); openInfo(k); return; } skyTarget=null; startFlight({ target:k, w:1 }, targetZoom(k), 'lit'); openInfo(k); }
+// Locate in the sky: put the camera back home at the Sun, looking out toward the object, with its constellation around it
+function locateSky(k){ skyTarget=k; const dist=bodyPos(k).distanceTo(eph.sun); startFlight({ target:k, w:1 }, Math.log10(dist)-0.0005, 'sky'); }
+// then a zoom transition from the constellation into the object, along the line of sight
+function flyInto(k){ skyTarget=null; startFlight({ target:k, w:1 }, targetZoom(k), 'sky'); }
 const activeTarget = () => flight ? (flight.s>=0.5 ? flight.toState.target : flight.fromState.target) : cur.target;
 
 // ---------- input ----------
@@ -3130,13 +3209,13 @@ function updateSkyPanel(){
 const qEl=document.getElementById('q'), resultsEl=document.getElementById('results');
 const SEARCH = [
   { kind:'place', grp:'gal', stop:STOPS.find(s => s.label==='Milky Way'), name:'Milky Way', tag:'Galaxy · our home', hay:'milky way galaxy home spiral barred' },
-  ...['sol','moons','comet','ast','region','neb','bh','exo','gal','craft'].flatMap(g => BODY_ORDER.filter(k => (BODY[k].group||'sol')===g).map(k => ({ kind:'body', grp:g, key:k, name:BODY[k].name,
+  ...['sol','moons','comet','ast','region','clu','neb','const','bh','exo','gal','craft'].flatMap(g => BODY_ORDER.filter(k => (BODY[k].group||'sol')===g).map(k => ({ kind:'body', grp:g, key:k, name:BODY[k].name,
       tag: BODY[k].tag || (k==='sun'?'Star':k==='moon'?'Moon':k==='pluto'?'Dwarf planet':'Planet'), hay:(BODY[k].name+' '+(BODY[k].alias||'')).toLowerCase() }))),
   { kind:'bang', grp:'place', name:'The Big Bang', tag:'Simulation', hay:'big bang beginning origin universe start creation explosion inflation cosmic microwave background' },
   ...STOPS.map(s => ({ kind:'place', grp:'place', stop:s, name:s.label, tag:'Place', hay:(s.label+' '+(s.alias||'')).toLowerCase() }))
 ];
 let shown = [], active = -1, catSel = 'all';
-const CATS = [['all','All'],['planets','Planets'],['suns','Suns & stars'],['moons','Moons'],['dwarfs','Dwarf planets'],['asteroids','Asteroids'],['comets','Comets'],['exo','Exoplanets'],['neb','Nebulae'],['bh','Black holes'],['gal','Galaxies'],['belts','Belts & clouds'],['craft','Spacecraft'],['places','Places']];
+const CATS = [['all','All'],['planets','Planets'],['suns','Suns & stars'],['moons','Moons'],['dwarfs','Dwarf planets'],['asteroids','Asteroids'],['comets','Comets'],['exo','Exoplanets'],['clusters','Star clusters'],['neb','Nebulae'],['const','Constellations'],['bh','Black holes'],['gal','Galaxies'],['belts','Belts & clouds'],['craft','Spacecraft'],['places','Places']];
 function catOf(it){
   if (it.grp==='gal') return 'gal';
   if (it.kind!=='body') return 'places';
@@ -3144,11 +3223,11 @@ function catOf(it){
   switch (it.grp){
     case 'sol': return it.key==='sun' ? 'suns' : it.key==='moon' ? 'moons' : it.tag==='Dwarf planet' ? 'dwarfs' : 'planets';
     case 'moons': return 'moons'; case 'comet': return 'comets'; case 'ast': return 'asteroids'; case 'region': return 'belts';
-    case 'neb': return 'neb'; case 'bh': return 'bh'; case 'craft': return 'craft';
+    case 'neb': return 'neb'; case 'clu': return 'clusters'; case 'const': return 'const'; case 'bh': return 'bh'; case 'craft': return 'craft';
     case 'exo': return (b.sys || it.tag==='Star') ? 'suns' : 'exo';
   } return 'places'; }
 SEARCH.forEach(it => { it.cat=catOf(it); });
-const GRP_NAME = { sol:'Sun, Moon & planets', moons:'Moons', comet:'Comets & interstellar objects', gal:'Galaxies', ast:'Asteroids & centaurs', region:'Belts & clouds', exo:'Star systems & their planets', neb:'Nebulae & clusters', bh:'Black holes', craft:'Spacecraft', place:'Places' };
+const GRP_NAME = { sol:'Sun, Moon & planets', moons:'Moons', comet:'Comets & interstellar objects', gal:'Galaxies', clu:'Star clusters', const:'Constellations', ast:'Asteroids & centaurs', region:'Belts & clouds', exo:'Star systems & their planets', neb:'Nebulae & clusters', bh:'Black holes', craft:'Spacecraft', place:'Places' };
 function renderResults(){
   const q=qEl.value.trim().toLowerCase().replace(/\s*\((?:star|planet)\)\s*$/,'');
   const terms=q.split(/\s+/).filter(Boolean);
@@ -3168,7 +3247,7 @@ function closeResults(){ resultsEl.hidden=true; qEl.setAttribute('aria-expanded'
 function choose(it){
   if (!it) return;
   if (it.kind==='bang') openBang(); else if (it.kind==='body') selectBody(it.key); else { closeInfo(); flyTo(it.stop); }
-  qEl.value=''; closeResults(); qEl.blur();
+  qEl.value=''; catSel='all'; closeResults(); qEl.blur();
 }
 qEl.addEventListener('focus', () => { active=-1; renderResults(); });
 qEl.addEventListener('input', () => { active = qEl.value.trim() ? 0 : -1; renderResults(); });
@@ -3208,6 +3287,13 @@ function openInfo(k){
     <div class="infozoom" role="group" aria-label="Zoom on ${b.name}"><button type="button" class="btn" data-iz="in" aria-label="Zoom in on ${b.name}"><svg viewBox="0 0 12 12" aria-hidden="true"><path d="M5 1h2v4h4v2H7v4H5V7H1V5h4z"/></svg>Zoom in</button><button type="button" class="btn" data-iz="fit">Frame</button><button type="button" class="btn" data-iz="out" aria-label="Zoom out from ${b.name}"><svg viewBox="0 0 12 12" aria-hidden="true"><path d="M1 5h10v2H1z"/></svg>Zoom out</button></div>
     ${(b.group==='craft' || b.group==='moons' || b.group==='region') ? '' : `<h3>${k==='earth'?'The zodiac from Earth':'In the zodiac'}</h3><div id="infoZodiac"></div>`}`;
   if (k==='c:3i') infoEl.querySelector('.facts').insertAdjacentHTML('afterend', c3iTimelineHTML());
+  if (['clu','neb','const','bh','gal'].includes(b.group)){
+    const btns = `<div class="skybtns"><button type="button" class="btn text" data-sky="locate">&#10022; Locate in the sky</button>${b.group!=='const'?`<button type="button" class="btn text" data-sky="into">Zoom into ${b.ref.replace(/^the /,'')} &#9656;</button>`:''}</div>`;
+    const ls=[...(LINKS[k]||[])], grpName={ const:'Constellation', clu:'Star clusters', neb:'Nebulae', bh:'Black holes', exo:'Star systems', gal:'Galaxies' };
+    const byG={}; ls.forEach(l => { const g=BODY[l].group||'sol'; (byG[g] ||= []).push(l); });
+    const conn = ls.length ? `<h3>Connected</h3><div class="links">${Object.entries(byG).map(([g,arr]) => `<p><span>${grpName[g]||'Other'}</span>${arr.map(l => `<button type="button" class="chip" data-go="${l}">${BODY[l].name}</button>`).join('')}</p>`).join('')}</div>` : '';
+    infoEl.querySelector('.facts').insertAdjacentHTML('afterend', btns+conn);
+  }
   makePanelCollapsible(infoEl,'Planet details',true);
   infoEl.hidden=false; hudEl.classList.add('info-open'); applyPanel(infoEl);
   document.getElementById('infoClose').addEventListener('click', closeInfo);
@@ -3228,6 +3314,7 @@ function openInfo(k){
 const viewer=document.getElementById('viewer');
 function openViewer(src, name, credit){ viewer.querySelector('img').src=src; viewer.querySelector('img').alt=name; const download=document.getElementById('viewerDownload'); download.href=src; download.download=name.toLowerCase().replace(/[^a-z0-9]+/g,'-')+(src.startsWith('data:')?'-4k.jpg':'.'+src.split('.').pop()); viewer.querySelector('figcaption').textContent=name+' · '+(credit || 'image by Tony Parker (Ether), upscaled to 3840 px'); viewer.hidden=false; viewer.querySelector('button').focus(); }
 viewer.addEventListener('click', e => { if (e.target===viewer || e.target.closest('button')) viewer.hidden=true; });
+infoEl.addEventListener('click', e => { const sk=e.target.closest('[data-sky]'), go=e.target.closest('[data-go]'); if (sk && infoKey){ if (sk.dataset.sky==='locate') locateSky(infoKey); else flyInto(infoKey); } if (go) selectBody(go.dataset.go); });
 infoEl.addEventListener('click', e => { const c=e.target.closest('[data-c3i]'); if (c){ if (c.dataset.c3i==='play') c3iPlay(); else if (c.dataset.c3i==='follow') c3iFollow(false); else if (c.dataset.c3i==='back') c3iFollow(true); else c3iGo(+c.dataset.c3i); } });
 infoEl.addEventListener('click', e => { const z=e.target.closest('[data-iz]'); if (!z || !infoKey) return; const k=infoKey;
   const dz = z.dataset.iz==='in' ? -0.5 : z.dataset.iz==='out' ? 0.5 : 0;
@@ -3258,7 +3345,7 @@ function updateInfoLive(){
     live.innerHTML = rowsHtml.map(r=>`<dt>${r[0]}</dt><dd>${r[1]}</dd>`).join(''); return;
   }
   if (b.far){
-    const dE=P.distanceTo(eph.earth); rowsHtml.push(['Distance from Earth', fmtDist(dE)], ['The light you see left it', fmtTime(dE/C_LIGHT)+' ago']);
+    const dE=P.distanceTo(eph.earth); if (b.group==='const') rowsHtml.push(['What it is','A direction on our sky; its stars lie at many different distances']); else rowsHtml.push(['Distance from Earth', fmtDist(dE)], ['The light you see left it', fmtTime(dE/C_LIGHT)+' ago']);
     live.innerHTML = rowsHtml.map(r=>`<dt>${r[0]}</dt><dd>${r[1]}</dd>`).join('');
     const L=((Math.atan2(b.dir.y,b.dir.x)/DEG + 1.396971*eph.T - zShift(eph.T))%360+360)%360, sign=SIGNS[Math.floor(L/30)], si=SIGN_INFO[sign];
     const key=sign+fmtDeg(L); if (key===infoZ) return; infoZ=key;
@@ -3341,7 +3428,7 @@ function pickAt(cx, cy){
   for (const k of BODY_ORDER){
     if (k==='moon' && patch.visible) continue;
     const P=bodyPos(k); if (!screenOf(P)) continue;
-    if (BODY[k].group==='region') continue;
+    if (BODY[k].group==='region' || BODY[k].group==='const') continue;
     if (BODY[k].group && BODY[k].group!=='neb' && camWorld.distanceTo(P) > BODY[k].R*4e4 && !labelVisible(k)) continue;
     const rad = BODY[k].R/Math.max(1,camWorld.distanceTo(P))*pixPerRad/DPR;
     if (rad<6 && occluded(P,k)) continue;
@@ -3678,7 +3765,10 @@ function frame(now){
   if (simTime > TMAX){ simTime=TMAX; if (dir>0) setDir(0); }
   if (simTime < TMIN){ simTime=TMIN; if (dir<0) setDir(0); }
   if (SHOW.beltSwirl) beltDemoDays = (beltDemoDays + adt*25) % 7305000; asteroids.material.uniforms.uTw.value = (asteroids.material.uniforms.uTw.value + adt) % 6283.2;
-  updateEphemeris(simTime); updateAlign(adt); updateC3iStory(); c3iFollowStep(); updateDwarfs(eph.jd); updateAsteroids(eph.jd); updateComet(eph.jd); updateCraft(simTime); if (SHOW.orbitsFast) orbitDemoDays += adt*0.35; updateMoonsExo(simTime);
+  updateEphemeris(simTime); updateAlign(adt); updateC3iStory();
+  { const show = !!skyTarget && !flight && activeTarget()===skyTarget && BODY[skyTarget].group!=='const';
+    if (show !== !skyPrompt.hidden){ skyPrompt.hidden=!show; if (show){ const b=BODY[skyTarget]; skyPromptText.textContent=`${b.name} in ${b.con}, ${fmtDist(bodyPos(skyTarget).distanceTo(eph.sun))} away`; } }
+    if (skyTarget && !flight && activeTarget()!==skyTarget) skyTarget=null; } c3iFollowStep(); updateDwarfs(eph.jd); updateAsteroids(eph.jd); updateComet(eph.jd); updateCraft(simTime); if (SHOW.orbitsFast) orbitDemoDays += adt*0.35; updateMoonsExo(simTime);
 
   if (flight){
     flight.t+=dt; const u=clamp(flight.t/flight.dur,0,1); flight.u=u; flight.s=smooth(0.2,0.8,u);
@@ -3705,6 +3795,7 @@ function frame(now){
   if (newMode !== mode){ mode=newMode; anglesFromDir(lastDir); }
   if (flight && flight.view==='surface' && mode==='local' && zoom<6.6){ const k=1-Math.exp(-dt*2.2); el=lerp(el,-8*DEG,k); az=angLerp(az,earthAz(),k); }
   if (flight && flight.view==='galaxy' && mode==='ecl' && zoom>12.5){ const k=1-Math.exp(-dt*1.6); const tgt=tmpV.copy(gz).multiplyScalar(Math.cos(32*DEG)).addScaledVector(gx,-Math.sin(32*DEG)).normalize(); el=lerp(el,Math.asin(tgt.z),k); az=angLerp(az,Math.atan2(tgt.y,tgt.x),k); }
+  if (flight && flight.view==='sky' && mode==='ecl'){ const k=1-Math.exp(-dt*3.2); const tgt=tmpW.copy(eph.sun).sub(bodyPos(flight.toState.target)).normalize(); el=lerp(el,Math.asin(clamp(tgt.z,-1,1)),k); az=angLerp(az,Math.atan2(tgt.y,tgt.x),k); }
   if (flight && flight.view==='lit' && mode==='ecl' && flight.u>0.4){ const k=1-Math.exp(-dt*2.6); const tgt=litDir(flight.toState.target, tmpW); el=lerp(el,Math.asin(clamp(tgt.z,-1,1)),k); az=angLerp(az,Math.atan2(tgt.y,tgt.x),k); }
   solveCamera(d);
   if (flight && flight.u>=1){ cur={ target:flight.toState.target }; flight=null; }
@@ -3821,8 +3912,9 @@ function frame(now){
 
   // point clouds
   const lyPerUnit = d/LY;
-  for (const pc of [stars, deep, nebulae, galaxy, pdots]){ const u=pc.material.uniforms; u.uLyPerUnit.value=lyPerUnit; u.uPixPerRad.value=pixPerRad; }
-  stars.visible = SHOW.stars; place(stars, eph.sun, LY, d); place(deep, eph.sun, LY, d); place(nebulae, eph.sun, LY, d); place(pdots, eph.sun, LY, d);
+  zSky = Math.log10(Math.max(1, camWorld.distanceTo(eph.sun)));
+  for (const pc of [stars, deep, nebulae, galaxy, pdots, clusterStars]){ const u=pc.material.uniforms; u.uLyPerUnit.value=lyPerUnit; u.uPixPerRad.value=pixPerRad; }
+  stars.visible = SHOW.stars; place(stars, eph.sun, LY, d); place(deep, eph.sun, LY, d); place(nebulae, eph.sun, LY, d); place(pdots, eph.sun, LY, d); place(clusterStars, eph.sun, LY, d);
   galaxy.material.uniforms.uLumScale.value = Math.pow(10, smooth(18.6,21,zoom)*1.05);
   galaxy.material.uniforms.uGain.value = lerp(0.55, 0.95, smooth(18.6,21,zoom));
   galaxy.material.uniforms.uMaxPx.value = lerp(2.0, 2.6, smooth(18.6,21,zoom))*DPR;
@@ -3833,7 +3925,7 @@ function frame(now){
       la[i] = SHOW.trueScale ? 0 : 1.7e-14*b.R/rs * (1-smooth(2.5,5,px)); });
     pdots.geometry.attributes.position.needsUpdate=true; pdots.geometry.attributes.lum.needsUpdate=true; }
 
-  { const ca = SHOW.constellations ? 1-smooth(16.2,17,zoom) : 0; constellations.visible = ca>0.01; constellations.lines.material.opacity=0.42*ca; constellations.dots.material.opacity=0.85*ca;
+  { const ca = SHOW.constellations ? 1-smooth(16.2,17,zSky) : 0; constellations.visible = ca>0.01; constellations.lines.material.opacity=0.42*ca; constellations.dots.material.opacity=0.85*ca;
     constellations.position.copy(camera.position); constellations.scale.setScalar(950); constellations.quaternion.copy(swirlQ); }
   zodiac.visible = SHOW.zodiac; zodiac.position.copy(camera.position); zodiac.scale.setScalar(1000);
   swirlTmpQ.setFromAxisAngle(Z, (zShift(eph.T) - 1.396971*eph.T)*DEG); zodiac.quaternion.copy(swirlQ).multiply(swirlTmpQ);
@@ -3856,7 +3948,8 @@ function frame(now){
 }
 function updateLabels(d){
   for (const L of labels){
-    let a = rangeAlpha(L.ranges, zoom);
+    let a = rangeAlpha(L.ranges, L.opt.sky || L.cat==='zodiac' ? zSky : zoom);
+    if (L.el.classList.contains('skytarget') !== (L.opt.key===skyTarget && !!skyTarget)) L.el.classList.toggle('skytarget');
     if (L.cat==='zodiac' ? !SHOW.zodiac : !SHOW.names[L.cat]) a=0;
     if (L.opt.sky==='constellations' && !SHOW.constellations) a=0;
     if (a>0.01 && L.opt.within && camWorld.distanceTo(L.opt.within()) > L.opt.maxDist) a=0;
