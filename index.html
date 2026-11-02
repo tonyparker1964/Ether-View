@@ -3447,7 +3447,7 @@ const dispOff = V(), dispCraft = [V(),V(),V()];
 function applyDisplayScale(){
   // One factor for every body, the Sun included, so sizes stay true to each other. The orbits open out
   // by S/25 so that even the enlarged Sun stays well inside Mercury's orbit and nothing ever overlaps.
-  DISP.Kb=null; DISP.hid={}; ambient.intensity = SHOW.poster && !SHOW.trueScale ? 0.38 : 0.05;   // poster: soft fill light so night sides still read
+  DISP.Kb=null; DISP.hid={}; DISP.sm=null; ambient.intensity = SHOW.poster && !SHOW.trueScale ? 0.38 : 0.05;   // poster: soft fill light so night sides still read
   if (SHOW.poster && !SHOW.trueScale){ posterScale(); return; }
   const S=SHOW.planetScale||1, D=dispD(S); DISP.D=D;
   if (S<=1){ DISP.K=DISP.kE=DISP.KS=1; MOONS.forEach(m => m.k=1); return; }
@@ -3496,9 +3496,16 @@ function posterScale(){
   for (const grp of ORDER){ let f=Infinity; grp.forEach(k => { if (k!=='mercury') f=Math.min(f, r[k]/want(Rof(k))); }); grp.forEach(k => r[k]=Math.max(Rof(k), Math.min(r[k], want(Rof(k))*f))); }   // Mercury, squeezed by the Sun, may be drawn smaller
   const rMin=Math.min(...ORDER[0].map(k => r[k]));
   for (const [k,P,R] of list){ if (k==='sun') continue; if (isDw(k)) r[k]=Math.max(R, Math.min(r[k], rMin)); Kb[k]=Math.max(1, r[k]/R); }
-  Kb.moon=1; const er=R_EARTH*Kb.earth*1.05;
-  if (eph.moon.distanceTo(eph.earth) < er) DISP.hid.moon=true;
-  MOONS.forEach(m => { const pr=PLANETS.find(p => p.k===m[0]).R*(Kb[m[0]]||1)*1.05; if (m.P.distanceTo(eph.p[m[0]]) < pr) DISP.hid['m:'+m[1]]=true; });
+  // moons: pushed out just beyond their (enlarged) planet, keeping their direction and order, and drawn in proportion
+  const sm=DISP.sm={};
+  const ring = (key, P, par, Rp, Rm, aMin, out) => {   // P: moon position (moved in place), par: planet position
+    const off=tmpN.copy(P).sub(par), a=off.length(), Rd=Rp*Kb[out];
+    const want = Math.max(a, Rd*(1.9 + 0.6*Math.log(Math.max(1, a/aMin))));
+    sm[key]=want/a; P.copy(par).addScaledVector(off, want/a);
+    Kb[key]=Math.max(1, Math.min(Rd*Math.sqrt(Rm/Rp)*0.8, Rd*0.35, 0.35*camWorld.distanceTo(P))/Rm); };
+  ring('moon', eph.moon, eph.earth, R_EARTH, R_MOON, 3.844e8, 'earth');
+  const aMin={}; MOONS.forEach(m => { const a=m.a||m.P.distanceTo(eph.p[m[0]]); aMin[m[0]]=Math.min(aMin[m[0]]||Infinity, a); });
+  MOONS.forEach(m => { const pl=PLANETS.find(p => p.k===m[0]); ring('m:'+m[1], m.P, eph.p[m[0]], pl.R, m.R, aMin[m[0]], m[0]); m.k=sm['m:'+m[1]]; });
 }
 function occluded(P, self){
   tmpW.copy(P).sub(camWorld); const len=tmpW.length(); tmpW.divideScalar(len);
@@ -3986,7 +3993,7 @@ function frame(now){
     orientBody(dw.mesh, spinFrame(Z, ((hours/dw.rot) + (SHOW.spin?spinT/24:0))*Math.PI*2 % (Math.PI*2), V()), Z); });
   { const ga = SHOW.grid ? rangeAlpha([[9.4,15.6]], zoom) : 0; eclGrid.visible=ga>0.01; eclGrid.material.opacity=0.22*ga; place(eclGrid, eph.sun, AU, d); }
   if (Math.abs(eph.jd-moonOrbitJD) > 0.5) refreshMoonOrbit(eph.jd);
-  const mo=SHOW.orbits ? rangeAlpha([[6.4,10.8]], zoom-Math.log10(DISP.kE)) : 0; moonOrbit.visible=mo>0.01; moonOrbit.material.opacity=0.4*mo; place(moonOrbit, eph.earth, 1e6*DISP.kE, d);
+  const mo=SHOW.orbits ? rangeAlpha([[6.4,10.8]], zoom-Math.log10(DISP.sm ? DISP.sm.moon : DISP.kE)) : 0; moonOrbit.visible=mo>0.01; moonOrbit.material.opacity=0.4*mo; place(moonOrbit, eph.earth, 1e6*(DISP.sm ? DISP.sm.moon : DISP.kE), d);
   { const aa = SHOW.asteroids && !SHOW.trueScale ? rangeAlpha([[8.9,14.2]], zSol()) : 0; asteroids.visible=aa>0.01; asteroids.material.uniforms.uAlpha.value=0.62*aa; place(asteroids, eph.sun, AU*DISP.D, d); }
   { const tk=activeTarget();
     for (const A of AST){ place(A.mesh, A.P, A.R, d); orientBody(A.mesh, spinFrame(Z, (hours/6 + (SHOW.spin?spinT/9:0))*Math.PI*2 % (Math.PI*2), V()), Z);
@@ -4043,7 +4050,7 @@ function updateLabels(d){
     if (L.solar===undefined){ const b=L.opt.key && BODY[L.opt.key]; L.solar = L.kind==='belt' || (!!b && !b.far && !String(L.opt.key).startsWith('x:')); }
     const kk=String(L.opt.key||''), isMoon = kk==='moon' || kk.startsWith('m:');
     if (DISP.hid && DISP.hid[kk]) { if (L.shown){ L.el.style.opacity='0'; L.shown=false; if (L.live){ L.el.classList.remove('live'); L.live=false; } } continue; }
-    let a = rangeAlpha(L.ranges, L.opt.sky || L.cat==='zodiac' ? zSky : isMoon ? zoom : L.solar ? zSol() : zoom);
+    let a = rangeAlpha(L.ranges, L.opt.sky || L.cat==='zodiac' ? zSky : isMoon ? zoom - Math.log10((DISP.sm && DISP.sm[kk]) || 1) : L.solar ? zSol() : zoom);
     if (L.el.classList.contains('skytarget') !== (L.opt.key===skyTarget && !!skyTarget)) L.el.classList.toggle('skytarget');
     if (L.cat==='zodiac' ? !SHOW.zodiac : !SHOW.names[L.cat]) a=0;
     if (L.opt.sky==='constellations' && !SHOW.constellations) a=0;
