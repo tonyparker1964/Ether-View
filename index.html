@@ -423,7 +423,7 @@ body{background:var(--void);color:var(--ink);font-family:var(--f-ui);overflow:hi
   <div id="alignToast" hidden role="status"></div>
   <div id="storyToast" hidden role="status"></div>
   <div id="skyPrompt" hidden><span id="skyPromptText"></span><button type="button" class="btn text" id="skyInto">Zoom in &#9656;</button></div>
-  <div id="scaleBar" aria-live="off"><div class="sbcol"><div class="sbrow"><span class="sbline" id="sbLine"></span><span id="sbText">1 AU</span></div><span class="sbearth" id="sbEarth"></span></div><label class="sbsize" title="Enlarge every planet by the same factor, so their sizes stay true to each other"><span>Planet size <b id="psOut">1×</b></span><input type="range" id="planetScale" min="0" max="4.3" step="0.01" value="0" aria-label="Planet size"></label><button type="button" class="btn text" id="trueBtn" aria-pressed="false" title="Show every body at its true size: no glows or enlarged dots">True scale</button></div>
+  <div id="scaleBar" aria-live="off"><div class="sbcol"><div class="sbrow"><span class="sbline" id="sbLine"></span><span id="sbText">1 AU</span></div><span class="sbearth" id="sbEarth"></span></div><label class="sbsize" title="Enlarge every body, the Sun included, by the same factor so their sizes stay true to each other; the orbits open out so nothing overlaps"><span>Planet size <b id="psOut">1×</b></span><input type="range" id="planetScale" min="0" max="3" step="0.01" value="0" aria-label="Planet size"></label><button type="button" class="btn text" id="trueBtn" aria-pressed="false" title="Show every body at its true size: no glows or enlarged dots">True scale</button></div>
   <section class="find panel" id="findPanel" aria-label="Search" data-drag>
     <span class="grip" aria-hidden="true" title="Drag to move"></span>
     <div class="search">
@@ -1711,10 +1711,10 @@ NEB.forEach(n => (NEB_PHOTO[n[0]] ? [[n[0],2.6]] : NEB_TEX[n[0]]||[]).forEach(([
   sp.frustumCulled=false; scene.add(sp);
   if (NEB_PHOTO[n[0]]){
     // Fade only the display edges so rectangular photographs blend into space.
-    sp.material.onBeforeCompile = shader => { shader.fragmentShader=shader.fragmentShader.replace('#include <map_fragment>', '#include <map_fragment>\n diffuseColor.a *= smoothstep(0.0, 0.12, min(min(vUv.x, 1.0-vUv.x), min(vUv.y, 1.0-vUv.y)));'); };
+    sp.material.onBeforeCompile = shader => { shader.fragmentShader=shader.fragmentShader.replace('#include <map_fragment>', '#include <map_fragment>\n diffuseColor.a *= smoothstep(0.0, 0.12, min(min(vUv.x, 1.0-vUv.x), min(vUv.y, 1.0-vUv.y))) * smoothstep(1.0, 0.55, length((vUv-0.5)*2.0));'); };
   }
   const off = i ? V(gauss(),gauss(),gauss()).normalize().multiplyScalar(0.25*n[5]) : V();
-  nebSprites.push({ sp, P:n.pos.clone().add(off).multiplyScalar(LY), size:f*n[5]*LY });
+  nebSprites.push({ sp, P:n.pos.clone().add(off).multiplyScalar(LY), size:f*n[5]*LY, base:sp.material.opacity });
 }));
 const deepBaseLum = Float32Array.from(deep.geometry.attributes.lum.array);
 
@@ -2413,9 +2413,9 @@ const MOON_FEATURES = [['Mare Imbrium',32.8,-15.6],['Mare Serenitatis',28.0,17.5
 MOON_FEATURES.forEach(f => { const v=V(), n=V(); addLabel(f[0],'feature', () => { seleno(f[1],f[2],n); return v.copy(eph.moon).addScaledVector(n,R_MOON); }, [[5.5,7.7]], { facing: () => n, near:'moon' }); });
 const VOY = [['Voyager 1',257.5,12.0,172],['Voyager 2',300.0,-60.0,144]];
 VOY.forEach(v => { const p=radec(v[1],v[2]).multiplyScalar(v[3]*AU); addLabel(v[0],'craft', fixed(p), [[12.6,16.2]], {}); });
-addLabel('Asteroid Belt','belt', fixed(V(Math.cos(215*DEG),Math.sin(215*DEG),0).multiplyScalar(2.75*AU)), [[10.7,12.3]], { key:'r:belt' });
-addLabel('Kuiper Belt','belt', fixed(V(Math.cos(130*DEG),Math.sin(130*DEG),0).multiplyScalar(44*AU)), [[12.5,14.4]], { key:'r:kuiper' });
-addLabel('Oort Cloud','belt', fixed(V(Math.cos(40*DEG),Math.sin(40*DEG),0.3).normalize().multiplyScalar(30000*AU)), [[14.7,17.6]], { key:'r:oort' });
+{ const b=V(Math.cos(215*DEG),Math.sin(215*DEG),0).multiplyScalar(2.75*AU), q=V(); addLabel('Asteroid Belt','belt', () => q.copy(b).multiplyScalar(DISP.D), [[10.7,12.3]], { key:'r:belt' }); }
+{ const b=V(Math.cos(130*DEG),Math.sin(130*DEG),0).multiplyScalar(44*AU), q=V(); addLabel('Kuiper Belt','belt', () => q.copy(b).multiplyScalar(DISP.D), [[12.5,14.4]], { key:'r:kuiper' }); }
+{ const b=V(Math.cos(40*DEG),Math.sin(40*DEG),0.3).normalize().multiplyScalar(30000*AU), q=V(); addLabel('Oort Cloud','belt', () => q.copy(b).multiplyScalar(DISP.D), [[14.7,17.6]], { key:'r:oort' }); }
 NAMED.forEach(s => { const p=s.pos.clone().multiplyScalar(LY); addLabel(s[0],'star', fixed(p), s[6] ? [[-9,8.7],[15.7,19.4]] : [[15.7,18.6]], { occlude:true, dy: s[0]==='Proxima Centauri'?13:0 }); });
 NEB.forEach(n => addLabel(n[1],'neb', fixed(n.pos.clone().multiplyScalar(LY)), n[0]==='tarantula' ? [[20.4,22]] : [[16.4,20.4]], { key:'n:'+n[0], sizeR:n[5]*LY, dy: n[0]==='horsehead'?13:0 }));
 BH.forEach(b => addLabel(b[0]==='sgra' ? 'Sagittarius A* · galactic center' : b[1],'bh', fixed(b.P), b[0]==='sgra' ? [[18.4,22]] : [[16.8,20.6]], { key:'b:'+b[0], sizeR:b.Rs*18, dy: b[0]==='v404'?13:0 }));
@@ -2863,8 +2863,11 @@ applyZod();
 zodMode.addEventListener('change', () => { SHOW.zodiacMode=zodMode.value; applyZod(); saveLayers(); infoZ=''; updateSkyPanel(); });
 const psIn=document.getElementById('planetScale'), psOut=document.getElementById('psOut');
 const fmtK = k => k<10 ? (Math.round(k*10)/10)+'×' : Math.round(k).toLocaleString()+'×';
-const applyPS = () => { psIn.value=String(Math.log10(Math.max(1,SHOW.planetScale||1))); psOut.textContent=fmtK(SHOW.planetScale||1); };
-psIn.addEventListener('input', () => { const v=Math.pow(10,+psIn.value); SHOW.planetScale = v<1.05 ? 1 : v>=100 ? Math.round(v/10)*10 : Math.round(v); applyPS(); saveLayers(); });
+const applyPS = () => { SHOW.planetScale=Math.min(1000, SHOW.planetScale||1); psIn.value=String(Math.log10(Math.max(1,SHOW.planetScale||1))); psOut.textContent=fmtK(SHOW.planetScale||1); };
+psIn.addEventListener('input', () => { const v=Math.pow(10,+psIn.value), D0=dispD(SHOW.planetScale); SHOW.planetScale = v<1.05 ? 1 : v>=100 ? Math.round(v/10)*10 : Math.round(v);
+  const dz=Math.log10(dispD(SHOW.planetScale)/D0), zs=zoom-Math.log10(D0);
+  if (dz && !flight && zs>9.6 && zs<15.5){ zoom+=dz; zoomTarget+=dz; }   // pull back as the system opens out, so it stays framed
+  applyPS(); saveLayers(); });
 applyPS();
 const applyTrue = () => { trueBtn.setAttribute('aria-pressed', String(!!SHOW.trueScale)); const sw=document.getElementById('trueScaleSw'); if (sw) sw.checked=!!SHOW.trueScale; };
 trueBtn.addEventListener('click', () => { SHOW.trueScale=!SHOW.trueScale; applyTrue(); saveLayers(); });
@@ -3338,7 +3341,7 @@ function updateInfoLive(){
   const k=infoKey, b=BODY[k], P=bodyPos(k), live=document.getElementById('infoLive'), zod=document.getElementById('infoZodiac'); if (!live) return;
   const rowsHtml=[];
   if (b.group==='moons'){
-    rowsHtml.push(['Distance from Earth', fmtDist(P.distanceTo(eph.earth))], ['Light from it reaches Earth in', fmtTime(P.distanceTo(eph.earth)/C_LIGHT)], ['Distance from the Sun', fmtDist(P.length())]);
+    const dEm=P.distanceTo(eph.earth)/DISP.D; rowsHtml.push(['Distance from Earth', fmtDist(dEm)], ['Light from it reaches Earth in', fmtTime(dEm/C_LIGHT)], ['Distance from the Sun', fmtDist(P.distanceTo(eph.sun)/DISP.D)]);
     live.innerHTML = rowsHtml.map(r=>`<dt>${r[0]}</dt><dd>${r[1]}</dd>`).join(''); return;
   }
   if (b.group==='region'){
@@ -3346,10 +3349,10 @@ function updateInfoLive(){
     live.innerHTML = rowsHtml.map(r=>`<dt>${r[0]}</dt><dd>${r[1]}</dd>`).join(''); return;
   }
   if (b.group==='craft'){
-    const dE=P.distanceTo(eph.earth);
+    const dE=P.distanceTo(eph.earth)/DISP.kE;
     if (k==='c:jwst') rowsHtml.push(['Distance from Earth', fmtDist(dE)], ['Signal travel time', fmtTime(dE/C_LIGHT)]);
     else rowsHtml.push(['Altitude in this model', fmtDist(dE-R_EARTH)]);
-    rowsHtml.push(['Distance from the Sun', fmtDist(P.length())]);
+    rowsHtml.push(['Distance from the Sun', fmtDist(P.distanceTo(eph.sun)/DISP.D)]);
     live.innerHTML = rowsHtml.map(r=>`<dt>${r[0]}</dt><dd>${r[1]}</dd>`).join(''); return;
   }
   if (b.far){
@@ -3363,9 +3366,10 @@ function updateInfoLive(){
       <p class="fine">${ZOD_NAME()} for the date shown. ${sidereal() ? 'In the sidereal zodiac fixed points keep their degree; the tropical degree drifts about 1° every 72 years.' : 'Fixed points drift about 1° every 72 years as Earth\'s axis precesses.'} Astrological meanings describe traditional symbolism, not measured physical effects.</p>`;
     return;
   }
-  if (k!=='earth'){ const dE=P.distanceTo(eph.earth); rowsHtml.push(['Distance from Earth', fmtDist(dE)], ['Light from it reaches Earth in', fmtTime(dE/C_LIGHT)]); }
-  if (k!=='sun') rowsHtml.push(['Distance from the Sun', fmtDist(P.length())]);
-  if (k==='earth') rowsHtml.push(['Sunlight reaches Earth in', fmtTime(P.length()/C_LIGHT)]);
+  if (k!=='earth'){ const dE=P.distanceTo(eph.earth)/(k==='moon'?DISP.kE:DISP.D); rowsHtml.push(['Distance from Earth', fmtDist(dE)], ['Light from it reaches Earth in', fmtTime(dE/C_LIGHT)]); }
+  const dSun=P.distanceTo(eph.sun)/(k==='moon'?DISP.D:DISP.D);
+  if (k!=='sun') rowsHtml.push(['Distance from the Sun', fmtDist(dSun)]);
+  if (k==='earth') rowsHtml.push(['Sunlight reaches Earth in', fmtTime(dSun/C_LIGHT)]);
   if (k!=='earth'){ const si2=skyInfo(k); if (k!=='sun') rowsHtml.push(['From Earth', si2.vis]); rowsHtml.push(['In front of the stars of', si2.where]); }
   if (k==='moon'){ const E=((geoNow.Moon-geoNow.Sun)%360+360)%360; rowsHtml.push(['Phase', `${PHASES[Math.floor(((E+22.5)%360)/45)]} · ${Math.round((1-Math.cos(E*DEG))/2*100)}% lit`]); }
   live.innerHTML = rowsHtml.map(r=>`<dt>${r[0]}</dt><dd>${r[1]}</dd>`).join('');
@@ -3393,9 +3397,9 @@ function updateInfoLive(){
 const regionEl=document.getElementById('region'), noteEl=document.getElementById('regionNote'), distEl=document.getElementById('dist'), focusEl=document.getElementById('focusName'), lightEl=document.getElementById('light');
 let lastRegion='';
 function updateHUD(){
-  const d=Math.pow(10,zoom), tk=activeTarget();
+  const d=Math.pow(10,zoom)/(zoom>9 && zoom<17.5 ? DISP.D : 1), tk=activeTarget();   // true distance, not the opened-out one
   let title, note;
-  if (tk && wEff>0.5){ title=BODY[tk].name; note=BODY[tk].type; } else { const reg=REGIONS.find(r => zoom < r[0]); title=reg[1]; note=reg[2]; }
+  if (tk && wEff>0.5){ title=BODY[tk].name; note=BODY[tk].type; } else { const zr = zoom>9 && zoom<17.5 ? zSol() : zoom, reg=REGIONS.find(r => zr < r[0]); title=reg[1]; note=reg[2]; }
   if (title!==lastRegion){ lastRegion=title; regionEl.textContent=title; noteEl.textContent=note; }
   if (zoom < 3.0 && wEff < 0.5){
     tmpV.copy(camWorld).sub(basis.S); const x=tmpV.dot(basis.east), y=tmpV.dot(basis.north), r=Math.hypot(x,y);
@@ -3422,11 +3426,38 @@ function spinFrame(pole, angle, out){
 const rangeAlpha = (ranges, z) => { let a=0; for (const [lo,hi] of ranges) a=Math.max(a, smooth(lo-0.25,lo+0.2,z)*(1-smooth(hi-0.2,hi+0.25,z))); return a; };
 const occluders = [{ c:()=>eph.moon, r:R_MOON, k:'moon' },{ c:()=>eph.earth, r:R_EARTH, k:'earth' },{ c:()=>eph.sun, r:R_SUN, k:'sun' }];
 EXO.forEach(sys=>sys.stars.filter(st=>st.key).forEach(st=>occluders.push({c:()=>st.P,r:st.Rm,k:'x:'+st.key,near:st.Rm*1000})));
-function sizeK(R, P, max){ const S=Math.min(SHOW.planetScale||1, max||Infinity); if (S<=1) return 1; return Math.max(1, Math.min(S, camWorld.distanceTo(P)/(R*10))); }
+// The planet size slider enlarges the Sun and planets by S. Past 30x the solar system itself spreads out by S/30, so the Sun
+// never swallows Mercury and planets move apart instead of piling up; moons and spacecraft keep their spacing to their planet
+// in proportion to its enlargement. Every distance in the details panels stays true.
+const DISP = { D:1, kE:1, K:1 };
+const zSol = () => zoom - Math.log10(DISP.D);
+const dispD = S => Math.max(1, (S||1)/25);   // orbits open out with the enlarged Sun, so it never swallows Mercury
+const dispOff = V(), dispCraft = [V(),V(),V()];
+function applyDisplayScale(){
+  // One factor for every body, the Sun included, so sizes stay true to each other. The orbits open out
+  // by S/25 so that even the enlarged Sun stays well inside Mercury's orbit and nothing ever overlaps.
+  const S=SHOW.planetScale||1, D=dispD(S); DISP.D=D;
+  if (S<=1){ DISP.K=DISP.kE=1; MOONS.forEach(m => m.k=1); return; }
+  const sun=eph.sun, helio = v => v.sub(sun).multiplyScalar(D).add(sun);
+  dispOff.copy(eph.moon).sub(eph.earth); [CRAFT.iss,CRAFT.hubble,CRAFT.jwst].forEach((c,i) => dispCraft[i].copy(c.P).sub(eph.earth));
+  helio(eph.earth);
+  const old={}; PKEYS.forEach(k => { old[k]=eph.p[k].clone(); helio(eph.p[k]); });
+  DWARFS.forEach(dw => helio(dw.P)); AST.forEach(A => helio(A.P)); helio(C3I.P);
+  // ease back toward true size as the camera nears any body, so you can never end up inside one
+  let K=S; const ck=(P,R) => { K=Math.min(K, camWorld.distanceTo(P)/(R*10)); };
+  ck(sun,R_SUN); ck(eph.earth,R_EARTH); PLANETS.forEach(p => ck(eph.p[p.k],p.R)); DWARFS.forEach(dw => ck(dw.P,dw.R));
+  ck(tmpV.copy(eph.earth).addScaledVector(dispOff, Math.max(1,K)), R_MOON);
+  K=Math.max(1,K); DISP.K=K; DISP.kE=K;
+  eph.moon.copy(eph.earth).addScaledVector(dispOff, K);
+  [CRAFT.iss,CRAFT.hubble,CRAFT.jwst].forEach((c,i) => c.P.copy(eph.earth).addScaledVector(dispCraft[i], K));
+  MOONS.forEach(m => { const par=m[0]; m.k=K; m.P.sub(old[par]).multiplyScalar(K).add(eph.p[par]); });
+}
+function sizeK(){ return (SHOW.planetScale||1)<=1 ? 1 : DISP.K; }   // the shared enlargement factor (true relative sizes)
 function occluded(P, self){
   tmpW.copy(P).sub(camWorld); const len=tmpW.length(); tmpW.divideScalar(len);
   for (const o of occluders){ if (o.k===self) continue; const c=o.c(); if(o.near && camWorld.distanceTo(c)>o.near) continue; tmpN.copy(c).sub(camWorld); const t=tmpN.dot(tmpW); if (t<0 || t>len) continue;
-    if (tmpN.lengthSq() - t*t < o.r*o.r*0.98) return true; }
+    const r = o.r*sizeK();
+    if (tmpN.lengthSq() - t*t < r*r*0.98) return true; }
   return false;
 }
 const scr = { x:0, y:0 };
@@ -3439,7 +3470,7 @@ function pickAt(cx, cy){
     const P=bodyPos(k); if (!screenOf(P)) continue;
     if (BODY[k].group==='region' || BODY[k].group==='const') continue;
     if (BODY[k].group && BODY[k].group!=='neb' && camWorld.distanceTo(P) > BODY[k].R*4e4 && !labelVisible(k)) continue;
-    const grow = (!BODY[k].group || BODY[k].group===undefined) && k!=='moon' ? sizeK(BODY[k].R, P, k==='sun'?12:Infinity) : 1;
+    const grow = (!BODY[k].group || BODY[k].group===undefined)  ? sizeK() : 1;
     const rad = BODY[k].R*grow/Math.max(1,camWorld.distanceTo(P))*pixPerRad/DPR;
     if (rad<6 && occluded(P,k)) continue;
     const lim=Math.max(16, rad), dd=Math.hypot(scr.x-cx, scr.y-cy);
@@ -3779,7 +3810,7 @@ function frame(now){
   updateEphemeris(simTime); updateAlign(adt); updateC3iStory();
   { const show = !!skyTarget && !flight && activeTarget()===skyTarget && BODY[skyTarget].group!=='const';
     if (show !== !skyPrompt.hidden){ skyPrompt.hidden=!show; if (show){ const b=BODY[skyTarget]; skyPromptText.textContent=`${b.name} in ${b.con}, ${fmtDist(bodyPos(skyTarget).distanceTo(eph.sun))} away`; } }
-    if (skyTarget && !flight && activeTarget()!==skyTarget) skyTarget=null; } c3iFollowStep(); updateDwarfs(eph.jd); updateAsteroids(eph.jd); updateComet(eph.jd); updateCraft(simTime); if (SHOW.orbitsFast) orbitDemoDays += adt*0.35; updateMoonsExo(simTime);
+    if (skyTarget && !flight && activeTarget()!==skyTarget) skyTarget=null; } c3iFollowStep(); updateDwarfs(eph.jd); updateAsteroids(eph.jd); updateComet(eph.jd); updateCraft(simTime); if (SHOW.orbitsFast) orbitDemoDays += adt*0.35; updateMoonsExo(simTime); applyDisplayScale();
 
   if (flight){
     flight.t+=dt; const u=clamp(flight.t/flight.dur,0,1); flight.u=u; flight.s=smooth(0.2,0.8,u);
@@ -3817,7 +3848,7 @@ function frame(now){
   // bodies
   sitePos.copy(basis.S);
   const surface = zoom < 5.05 && wEff < 0.02;
-  place(moonMesh, eph.moon, R_MOON - (surface && zoom<5.2 ? 800 : 0), d);
+  place(moonMesh, eph.moon, R_MOON*sizeK() - (surface && zoom<5.2 ? 800 : 0), d);
   orientBody(moonMesh, moonFrame.x, moonFrame.z);
   moonMesh.visible = zoom > 4.55 || !surface;
   moonMesh.material.bumpScale = 0.006*Math.max(0.02, (camWorld.distanceTo(eph.moon)-R_MOON)/d);
@@ -3830,7 +3861,7 @@ function frame(now){
   clouds.rotation.y = (simTime/86400000)*0.35 % (Math.PI*2);
 
   PLANETS.forEach(p => { if (p.rocks) p.rocks.visible = !SHOW.trueScale; });
-  const sunK = sizeK(R_SUN, eph.sun, 12);
+  const sunK = sizeK();
   place(sunMesh, eph.sun, R_SUN*sunK, d); orientBody(sunMesh, spinFrame(SUN_POLE, (simTime/3600000/609.1 + (SHOW.spin?spinT/40:0))*Math.PI*2 % (Math.PI*2), V()), SUN_POLE);
   const sunScene = sunMesh.position;
   sunLight.position.copy(sunScene); sunLight.decay=0.0001; sunLight.distance=6000*AU/d;
@@ -3860,9 +3891,9 @@ function frame(now){
     if (sa>0.01){ updateStrings(anow/1000, sa, zoom); QS.grp.visible=true; QS.grp.position.set(0,0,0); QS.grp.scale.setScalar(1); } else if (QS.built) QS.grp.visible=false; }
   // moons and other planetary systems
   for (const m of MOONS){
-    if(camWorld.distanceTo(m.P)<m.R*600) loadVisibleBodyMap('m:'+m[1]); place(m.mesh, m.P, m.R, d); if(m.shape) m.mesh.scale.set(m.R/d*m.shape[0],m.R/d*m.shape[1],m.R/d*m.shape[2]); const toPar=tmpV.set(-Math.cos(m.th),0,0); toPar.copy(m.e1).multiplyScalar(-Math.cos(m.th)).addScaledVector(m.e2,-Math.sin(m.th)); orientBody(m.mesh, toPar, m.pole);
+    if(camWorld.distanceTo(m.P)<m.R*600) loadVisibleBodyMap('m:'+m[1]); const mk=sizeK(); place(m.mesh, m.P, m.R*mk, d); if(m.shape) m.mesh.scale.set(m.R*mk/d*m.shape[0],m.R*mk/d*m.shape[1],m.R*mk/d*m.shape[2]); const toPar=tmpV.set(-Math.cos(m.th),0,0); toPar.copy(m.e1).multiplyScalar(-Math.cos(m.th)).addScaledVector(m.e2,-Math.sin(m.th)); orientBody(m.mesh, toPar, m.pole);
     const near = camWorld.distanceTo(eph.p[m[0]]) < m.a*80, oa = SHOW.orbits && near ? rangeAlpha([[Math.log10(m.a)-0.9, Math.log10(m.a)+2.2]], zoom) : 0;
-    m.orbit.visible=oa>0.01; if (m.orbit.visible){ m.orbit.material.opacity=0.4*oa; place(m.orbit, eph.p[m[0]], m.a, d); mTmp.makeBasis(m.e1, m.e2, m.pole); m.orbit.quaternion.setFromRotationMatrix(mTmp); }
+    m.orbit.visible=oa>0.01; if (m.orbit.visible){ m.orbit.material.opacity=0.4*oa; place(m.orbit, eph.p[m[0]], m.a*(m.k||1), d); mTmp.makeBasis(m.e1, m.e2, m.pole); m.orbit.quaternion.setFromRotationMatrix(mTmp); }
     axisLines.length; }
   for (const sys of EXO){
     const camD = camWorld.distanceTo(sys.P), near = camD < Math.max(sys.aMax,0.05*AU)*400;
@@ -3881,7 +3912,8 @@ function frame(now){
       if (o.orbit.visible){ o.orbit.material.opacity=0.45*oa; place(o.orbit, sys.P, o.a, d); mTmp.makeBasis(sys.e1, sys.e2, sys.pole); o.orbit.quaternion.setFromRotationMatrix(mTmp); } }
   }
   // nebula images and their distant glow
-  for (const n of nebSprites){ place(n.sp, n.P, n.size, d); const im=n.sp.material.map.image; if (im?.width && im?.height) n.sp.scale.y *= im.height/im.width; }
+  for (const n of nebSprites){ place(n.sp, n.P, n.size, d); const im=n.sp.material.map.image; if (im?.width && im?.height) n.sp.scale.y *= im.height/im.width;
+    const px=n.size/Math.max(1,camWorld.distanceTo(n.P))*pixPerRad/DPR; n.sp.material.opacity=n.base*smooth(10,48,px); n.sp.visible=px>10; }   // tiny photos would read as squares; the glow point stands in
   { const la=deep.geometry.attributes.lum.array; NEB.forEach((n,i) => { const Pm=tmpV.copy(n.pos).multiplyScalar(LY); const px=(2*n[5]*LY)/Math.max(1,camWorld.distanceTo(Pm))*pixPerRad; la[i]=deepBaseLum[i]*(1-smooth(3*DPR,12*DPR,px)); }); deep.geometry.attributes.lum.needsUpdate=true; }
   // spacecraft orbit circles
   { const oa = SHOW.orbits ? rangeAlpha([[3.8,8.6]], zoom) : 0;
@@ -3899,28 +3931,28 @@ function frame(now){
 
   // orbits & belts
   refreshPlanetOrbits(eph.T);
-  const orbA = SHOW.orbits ? rangeAlpha([[8.6,16]], zoom) : 0;
-  orbits.forEach(o => { o.visible=orbA>0.01; place(o, eph.sun, AU, d); const gold=ALIGNED.has(o.userData.key) || ALIGN2.has(o.userData.key); o.material.color.set(gold?0xffcf6a:o.userData.col); o.material.opacity=(gold?0.9:o.userData.base)*orbA; });
+  const orbA = SHOW.orbits ? rangeAlpha([[8.6,16]], zSol()) : 0;
+  orbits.forEach(o => { o.visible=orbA>0.01; place(o, eph.sun, AU*DISP.D, d); const gold=ALIGNED.has(o.userData.key) || ALIGN2.has(o.userData.key); o.material.color.set(gold?0xffcf6a:o.userData.col); o.material.opacity=(gold?0.9:o.userData.base)*orbA; });
   drawAlign(d);
-  DWARFS.forEach(dw => { dw.orbit.visible=orbA>0.01; place(dw.orbit, eph.sun, AU, d); dw.orbit.material.opacity=0.32*orbA;
+  DWARFS.forEach(dw => { dw.orbit.visible=orbA>0.01; place(dw.orbit, eph.sun, AU*DISP.D, d); dw.orbit.material.opacity=0.32*orbA;
     if(camWorld.distanceTo(dw.P)<dw.R*600) loadVisibleBodyMap(dw.k); const dk=sizeK(dw.R, dw.P); place(dw.mesh, dw.P, dw.R*dk, d); if (dw.shape){ const s=dw.R*dk/d; dw.mesh.scale.set(s*dw.shape[0], s*dw.shape[1], s*dw.shape[2]); }
     orientBody(dw.mesh, spinFrame(Z, ((hours/dw.rot) + (SHOW.spin?spinT/24:0))*Math.PI*2 % (Math.PI*2), V()), Z); });
   { const ga = SHOW.grid ? rangeAlpha([[9.4,15.6]], zoom) : 0; eclGrid.visible=ga>0.01; eclGrid.material.opacity=0.22*ga; place(eclGrid, eph.sun, AU, d); }
   if (Math.abs(eph.jd-moonOrbitJD) > 0.5) refreshMoonOrbit(eph.jd);
-  const mo=SHOW.orbits ? rangeAlpha([[6.4,10.8]], zoom) : 0; moonOrbit.visible=mo>0.01; moonOrbit.material.opacity=0.4*mo; place(moonOrbit, eph.earth, 1e6, d);
-  { const aa = SHOW.asteroids && !SHOW.trueScale ? rangeAlpha([[8.9,14.2]], zoom) : 0; asteroids.visible=aa>0.01; asteroids.material.uniforms.uAlpha.value=0.62*aa; place(asteroids, eph.sun, AU, d); }
+  const mo=SHOW.orbits ? rangeAlpha([[6.4,10.8]], zoom-Math.log10(DISP.kE)) : 0; moonOrbit.visible=mo>0.01; moonOrbit.material.opacity=0.4*mo; place(moonOrbit, eph.earth, 1e6*DISP.kE, d);
+  { const aa = SHOW.asteroids && !SHOW.trueScale ? rangeAlpha([[8.9,14.2]], zSol()) : 0; asteroids.visible=aa>0.01; asteroids.material.uniforms.uAlpha.value=0.62*aa; place(asteroids, eph.sun, AU*DISP.D, d); }
   { const tk=activeTarget();
     for (const A of AST){ place(A.mesh, A.P, A.R, d); orientBody(A.mesh, spinFrame(Z, (hours/6 + (SHOW.spin?spinT/9:0))*Math.PI*2 % (Math.PI*2), V()), Z);
-      const show = SHOW.orbits && (tk==='a:'+A.k || infoKey==='a:'+A.k); A.orbit.visible=show; if (show){ place(A.orbit, eph.sun, AU, d); A.orbit.material.opacity=0.5*rangeAlpha([[7,15.6]],zoom); } } }
+      const show = SHOW.orbits && (tk==='a:'+A.k || infoKey==='a:'+A.k); A.orbit.visible=show; if (show){ place(A.orbit, eph.sun, AU*DISP.D, d); A.orbit.material.opacity=0.5*rangeAlpha([[7,15.6]],zSol()); } } }
   { // 3I/ATLAS: its path, and Ether's artwork with the tails pointed away from the Sun
-    const tk=activeTarget(), sel = tk==='c:3i' || infoKey==='c:3i', oa = SHOW.orbits ? rangeAlpha([[9.2,sel?18.2:14.6]], zoom)*(sel?1:0.55) : 0;
-    comet3i.orbit.visible = oa>0.01; if (comet3i.orbit.visible){ comet3i.orbit.material.opacity=0.55*oa; place(comet3i.orbit, eph.sun, AU, d); }
+    const tk=activeTarget(), sel = tk==='c:3i' || infoKey==='c:3i', oa = SHOW.orbits ? rangeAlpha([[9.2,sel?18.2:14.6]], zSol())*(sel?1:0.55) : 0;
+    comet3i.orbit.visible = oa>0.01; if (comet3i.orbit.visible){ comet3i.orbit.material.opacity=0.55*oa; place(comet3i.orbit, eph.sun, AU*DISP.D, d); }
     const art=comet3i.art, near=camWorld.distanceTo(C3I.P) < 3e7; art.visible=near;
     if (near){ place(art, C3I.P, C3I_ART_H, d);
       const ac=tmpV.copy(C3I.anti).applyQuaternion(tmpQ.copy(camera.quaternion).invert()), th=Math.atan2(ac.y, ac.x)+Math.PI;
       art.quaternion.copy(camera.quaternion).multiply(tmpQ.setFromAxisAngle(Z, th)); comet3i.U.uT.value=anow/1000; } }
   kuiper.rotation.z = (2*Math.PI*beltDemoDays/(365.25*Math.pow(42,1.5))) % (2*Math.PI);
-  [[kuiper,[[11.9,15.3]],0.5],[oort,[[14.1,17.3]],0.4]].forEach(([o,r,b]) => { const a=SHOW.trueScale ? 0 : rangeAlpha(r,zoom); o.visible=a>0.01; o.material.opacity=b*a; place(o, eph.sun, AU, d); });
+  [[kuiper,[[11.9,15.3]],0.5],[oort,[[14.1,17.3]],0.4]].forEach(([o,r,b]) => { const a=SHOW.trueScale ? 0 : rangeAlpha(r,zSol()); o.visible=a>0.01; o.material.opacity=b*a; place(o, eph.sun, AU*DISP.D, d); });
 
   // point clouds
   const lyPerUnit = d/LY;
@@ -3933,7 +3965,7 @@ function frame(now){
   place(galaxy, GC, LY, d);
   { const pa=pdots.geometry.attributes.position.array, la=pdots.geometry.attributes.lum.array;
     DOT_BODIES.forEach((b,i) => { const P=bodyPos(b.k); pa[i*3]=P.x/LY; pa[i*3+1]=P.y/LY; pa[i*3+2]=P.z/LY;
-      const rs=Math.max(P.length()/AU, 0.3), dist=Math.max(camWorld.distanceTo(P),1), px=b.R*(b.k==='moon'?1:sizeK(b.R,P))/dist*pixPerRad;
+      const rs=Math.max(P.length()/AU, 0.3), dist=Math.max(camWorld.distanceTo(P),1), px=b.R*sizeK()/dist*pixPerRad;
       la[i] = SHOW.trueScale ? 0 : 1.7e-14*b.R/rs * (1-smooth(2.5,5,px)); });
     pdots.geometry.attributes.position.needsUpdate=true; pdots.geometry.attributes.lum.needsUpdate=true; }
 
@@ -3951,7 +3983,7 @@ function frame(now){
     const raw = mpp*110, unitsArr=[[LY,'ly'],[AU,'AU'],[1e3,'km'],[1,'m']]; let best=null;
     for (const [u,n] of unitsArr){ const v=raw/u; if (v>=1 || u===1){ const p10=Math.pow(10,Math.floor(Math.log10(v))), m=v/p10, nice=(m>=5?5:m>=2?2:1)*p10; best=[nice*u, (nice>=1e4?nice.toLocaleString():+nice.toPrecision(3))+' '+n]; break; } }
     if (best){ sbLine.style.width=(best[0]/mpp).toFixed(1)+'px'; sbText.textContent=best[1]; }
-    const ep = 2*R_EARTH*Math.max(1, Math.min(SHOW.planetScale||1, camWorld.distanceTo(F)/(R_EARTH*10)))/mpp;   // an Earth placed at the point in focus
+    const ep = 2*R_EARTH*sizeK()/mpp;   // an Earth placed at the point in focus
     sbEarth.textContent = 'Earth here: '+(ep>=10 ? Math.round(ep)+' px' : ep>=0.01 ? ep.toPrecision(2)+' px' : ep>=1e-6 ? (1/ep>=1e6 ? '1/'+(Math.round(1/ep)).toExponential(1).replace('e+',' × 10^')+' px' : '1/'+Math.round(1/ep).toLocaleString()+' of a pixel') : 'far below a pixel');
   }
   if (hudT > 0.1){ hudT=0; updateHUD(); }
@@ -3961,7 +3993,9 @@ function frame(now){
 }
 function updateLabels(d){
   for (const L of labels){
-    let a = rangeAlpha(L.ranges, L.opt.sky || L.cat==='zodiac' ? zSky : zoom);
+    if (L.solar===undefined){ const b=L.opt.key && BODY[L.opt.key]; L.solar = L.kind==='belt' || (!!b && !b.far && !String(L.opt.key).startsWith('x:')); }
+    const kk=String(L.opt.key||''), isMoon = kk==='moon' || kk.startsWith('m:');
+    let a = rangeAlpha(L.ranges, L.opt.sky || L.cat==='zodiac' ? zSky : isMoon ? zoom : L.solar ? zSol() : zoom);
     if (L.el.classList.contains('skytarget') !== (L.opt.key===skyTarget && !!skyTarget)) L.el.classList.toggle('skytarget');
     if (L.cat==='zodiac' ? !SHOW.zodiac : !SHOW.names[L.cat]) a=0;
     if (L.opt.sky==='constellations' && !SHOW.constellations) a=0;
