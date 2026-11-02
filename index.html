@@ -148,6 +148,8 @@ body{background:var(--void);color:var(--ink);font-family:var(--f-ui);overflow:hi
 #scaleBar .sbsize{display:flex;flex-direction:column;gap:2px;font:500 calc(10px*var(--fs))/1.2 var(--f-ui);color:var(--ink-dim);cursor:pointer}
 #scaleBar .sbsize b{color:var(--sun);font-family:var(--f-mono)}
 #scaleBar .sbsize input{width:calc(9rem*var(--fs));accent-color:var(--sun)}
+#scaleBar .sbsun{display:flex;align-items:center;gap:4px;font:500 calc(10px*var(--fs))/1.2 var(--f-ui);color:var(--ink-dim);cursor:pointer;white-space:nowrap}
+#scaleBar .sbsun input{accent-color:var(--sun);margin:0}
 #scaleBar .sbearth{color:var(--ink-dim);font-size:calc(10px*var(--fs))}
 #scaleBar .btn{height:26px;padding:0 10px;font-size:calc(10px*var(--fs))}
 #scaleBar .btn[aria-pressed="true"]{color:#1a1206;background:var(--sun);border-color:var(--sun)}
@@ -423,7 +425,7 @@ body{background:var(--void);color:var(--ink);font-family:var(--f-ui);overflow:hi
   <div id="alignToast" hidden role="status"></div>
   <div id="storyToast" hidden role="status"></div>
   <div id="skyPrompt" hidden><span id="skyPromptText"></span><button type="button" class="btn text" id="skyInto">Zoom in &#9656;</button></div>
-  <div id="scaleBar" aria-live="off"><div class="sbcol"><div class="sbrow"><span class="sbline" id="sbLine"></span><span id="sbText">1 AU</span></div><span class="sbearth" id="sbEarth"></span></div><label class="sbsize" title="Enlarge every body, the Sun included, by the same factor so their sizes stay true to each other; the orbits open out so nothing overlaps"><span>Planet size <b id="psOut">1×</b></span><input type="range" id="planetScale" min="0" max="3" step="0.01" value="0" aria-label="Planet size"></label><button type="button" class="btn text" id="trueBtn" aria-pressed="false" title="Show every body at its true size: no glows or enlarged dots">True scale</button></div>
+  <div id="scaleBar" aria-live="off"><div class="sbcol"><div class="sbrow"><span class="sbline" id="sbLine"></span><span id="sbText">1 AU</span></div><span class="sbearth" id="sbEarth"></span></div><label class="sbsize" title="Enlarge the planets and moons by the same factor, so their sizes stay true to each other. The Sun grows too, up to the size that still fits inside Mercury's orbit"><span>Planet size <b id="psOut">1×</b></span><input type="range" id="planetScale" min="0" max="3" step="0.01" value="0" aria-label="Planet size"></label><label class="sbsun" title="Grow the Sun by the same factor too (its real size: 109 times Earth). The orbits open out to fit it, so the planets end up tiny again."><input type="checkbox" id="sunProp"> Sun to scale</label><button type="button" class="btn text" id="trueBtn" aria-pressed="false" title="Show every body at its true size: no glows or enlarged dots">True scale</button></div>
   <section class="find panel" id="findPanel" aria-label="Search" data-drag>
     <span class="grip" aria-hidden="true" title="Drag to move"></span>
     <div class="search">
@@ -2149,7 +2151,7 @@ const rateSec = () => dir*UNITS[unitIdx][2];
 let zoom = 7.3, zoomTarget = 7.3, flight = null, lastD = 2e7;
 let cur = { target:null }, wEff = 0;      // body the view is centred on (null = automatic by distance)
 let az = 0, el = -8*DEG, mode = 'local';
-const SHOW = { stringColors:'bodies', strings:true, stringTrans:45, textSize:1.2, asteroids:true, grid:false, zodiacMode:'sidereal', orbitsFast:false, beltSwirl:true, skySwirl:true, alignPulse:true, trueScale:false, planetScale:1, orbits:true, constellations:true, stars:true, zodiac:true, axes:false, spin:true, names:{ asteroids:true, bodies:true, stars:true, constellations:true, deep:true, places:true } };
+const SHOW = { stringColors:'bodies', strings:true, stringTrans:45, textSize:1.2, asteroids:true, grid:false, zodiacMode:'sidereal', orbitsFast:false, beltSwirl:true, skySwirl:true, alignPulse:true, trueScale:false, planetScale:1, sunProp:false, orbits:true, constellations:true, stars:true, zodiac:true, axes:false, spin:true, names:{ asteroids:true, bodies:true, stars:true, constellations:true, deep:true, places:true } };
 try { const v=JSON.parse(localStorage.getItem('ethers-view-layers')||'null'); if (v){ Object.assign(SHOW, v, { names:Object.assign(SHOW.names, v.names||{}) }); } } catch(e){}
 let spinT = 0;
 const camWorld = V(), F = V(), Fa = V(), Fb = V(), lastDir = V(1,0,0);
@@ -2864,6 +2866,9 @@ zodMode.addEventListener('change', () => { SHOW.zodiacMode=zodMode.value; applyZ
 const psIn=document.getElementById('planetScale'), psOut=document.getElementById('psOut');
 const fmtK = k => k<10 ? (Math.round(k*10)/10)+'×' : Math.round(k).toLocaleString()+'×';
 const applyPS = () => { SHOW.planetScale=Math.min(1000, SHOW.planetScale||1); psIn.value=String(Math.log10(Math.max(1,SHOW.planetScale||1))); psOut.textContent=fmtK(SHOW.planetScale||1); };
+const sunPropIn=document.getElementById('sunProp'); sunPropIn.checked=!!SHOW.sunProp;
+sunPropIn.addEventListener('change', () => { const D0=dispD(SHOW.planetScale); SHOW.sunProp=sunPropIn.checked; const dz=Math.log10(dispD(SHOW.planetScale)/D0), zs=zoom-Math.log10(D0);
+  if (dz && !flight && zs>9.6 && zs<15.5){ zoom+=dz; zoomTarget+=dz; } saveLayers(); });
 psIn.addEventListener('input', () => { const v=Math.pow(10,+psIn.value), D0=dispD(SHOW.planetScale); SHOW.planetScale = v<1.05 ? 1 : v>=100 ? Math.round(v/10)*10 : Math.round(v);
   const dz=Math.log10(dispD(SHOW.planetScale)/D0), zs=zoom-Math.log10(D0);
   if (dz && !flight && zs>9.6 && zs<15.5){ zoom+=dz; zoomTarget+=dz; }   // pull back as the system opens out, so it stays framed
@@ -3429,15 +3434,15 @@ EXO.forEach(sys=>sys.stars.filter(st=>st.key).forEach(st=>occluders.push({c:()=>
 // The planet size slider enlarges the Sun and planets by S. Past 30x the solar system itself spreads out by S/30, so the Sun
 // never swallows Mercury and planets move apart instead of piling up; moons and spacecraft keep their spacing to their planet
 // in proportion to its enlargement. Every distance in the details panels stays true.
-const DISP = { D:1, kE:1, K:1 };
+const DISP = { D:1, kE:1, K:1, KS:1 };
 const zSol = () => zoom - Math.log10(DISP.D);
-const dispD = S => Math.max(1, (S||1)/25);   // orbits open out with the enlarged Sun, so it never swallows Mercury
+const dispD = S => SHOW.sunProp ? Math.max(1, (S||1)/25) : Math.max(1, (S||1)/1000);   // orbits open out just enough that nothing ever overlaps
 const dispOff = V(), dispCraft = [V(),V(),V()];
 function applyDisplayScale(){
   // One factor for every body, the Sun included, so sizes stay true to each other. The orbits open out
   // by S/25 so that even the enlarged Sun stays well inside Mercury's orbit and nothing ever overlaps.
   const S=SHOW.planetScale||1, D=dispD(S); DISP.D=D;
-  if (S<=1){ DISP.K=DISP.kE=1; MOONS.forEach(m => m.k=1); return; }
+  if (S<=1){ DISP.K=DISP.kE=DISP.KS=1; MOONS.forEach(m => m.k=1); return; }
   const sun=eph.sun, helio = v => v.sub(sun).multiplyScalar(D).add(sun);
   dispOff.copy(eph.moon).sub(eph.earth); [CRAFT.iss,CRAFT.hubble,CRAFT.jwst].forEach((c,i) => dispCraft[i].copy(c.P).sub(eph.earth));
   helio(eph.earth);
@@ -3445,18 +3450,22 @@ function applyDisplayScale(){
   DWARFS.forEach(dw => helio(dw.P)); AST.forEach(A => helio(A.P)); helio(C3I.P);
   // ease back toward true size as the camera nears any body, so you can never end up inside one
   let K=S; const ck=(P,R) => { K=Math.min(K, camWorld.distanceTo(P)/(R*10)); };
-  ck(sun,R_SUN); ck(eph.earth,R_EARTH); PLANETS.forEach(p => ck(eph.p[p.k],p.R)); DWARFS.forEach(dw => ck(dw.P,dw.R));
+  if (SHOW.sunProp) ck(sun,R_SUN);
+  ck(eph.earth,R_EARTH); PLANETS.forEach(p => ck(eph.p[p.k],p.R)); DWARFS.forEach(dw => ck(dw.P,dw.R));
   ck(tmpV.copy(eph.earth).addScaledVector(dispOff, Math.max(1,K)), R_MOON);
   K=Math.max(1,K); DISP.K=K; DISP.kE=K;
+  // Sun: same factor when 'Sun to scale' is on; otherwise it grows with the planets until it would reach Mercury's orbit
+  DISP.KS = SHOW.sunProp ? K : Math.max(1, Math.min(K, 40*D, camWorld.distanceTo(sun)/(R_SUN*10)));
   eph.moon.copy(eph.earth).addScaledVector(dispOff, K);
   [CRAFT.iss,CRAFT.hubble,CRAFT.jwst].forEach((c,i) => c.P.copy(eph.earth).addScaledVector(dispCraft[i], K));
   MOONS.forEach(m => { const par=m[0]; m.k=K; m.P.sub(old[par]).multiplyScalar(K).add(eph.p[par]); });
 }
-function sizeK(){ return (SHOW.planetScale||1)<=1 ? 1 : DISP.K; }   // the shared enlargement factor (true relative sizes)
+function sizeK(){ return (SHOW.planetScale||1)<=1 ? 1 : DISP.K; }   // the shared enlargement factor (planets and moons true to each other)
+function sunSizeK(){ return (SHOW.planetScale||1)<=1 ? 1 : DISP.KS; }
 function occluded(P, self){
   tmpW.copy(P).sub(camWorld); const len=tmpW.length(); tmpW.divideScalar(len);
   for (const o of occluders){ if (o.k===self) continue; const c=o.c(); if(o.near && camWorld.distanceTo(c)>o.near) continue; tmpN.copy(c).sub(camWorld); const t=tmpN.dot(tmpW); if (t<0 || t>len) continue;
-    const r = o.r*sizeK();
+    const r = o.r*(o.k==='sun' ? sunSizeK() : sizeK());
     if (tmpN.lengthSq() - t*t < r*r*0.98) return true; }
   return false;
 }
@@ -3470,7 +3479,7 @@ function pickAt(cx, cy){
     const P=bodyPos(k); if (!screenOf(P)) continue;
     if (BODY[k].group==='region' || BODY[k].group==='const') continue;
     if (BODY[k].group && BODY[k].group!=='neb' && camWorld.distanceTo(P) > BODY[k].R*4e4 && !labelVisible(k)) continue;
-    const grow = (!BODY[k].group || BODY[k].group===undefined)  ? sizeK() : 1;
+    const grow = (!BODY[k].group || BODY[k].group===undefined)  ? (k==='sun' ? sunSizeK() : sizeK()) : 1;
     const rad = BODY[k].R*grow/Math.max(1,camWorld.distanceTo(P))*pixPerRad/DPR;
     if (rad<6 && occluded(P,k)) continue;
     const lim=Math.max(16, rad), dd=Math.hypot(scr.x-cx, scr.y-cy);
@@ -3861,7 +3870,7 @@ function frame(now){
   clouds.rotation.y = (simTime/86400000)*0.35 % (Math.PI*2);
 
   PLANETS.forEach(p => { if (p.rocks) p.rocks.visible = !SHOW.trueScale; });
-  const sunK = sizeK();
+  const sunK = sunSizeK();
   place(sunMesh, eph.sun, R_SUN*sunK, d); orientBody(sunMesh, spinFrame(SUN_POLE, (simTime/3600000/609.1 + (SHOW.spin?spinT/40:0))*Math.PI*2 % (Math.PI*2), V()), SUN_POLE);
   const sunScene = sunMesh.position;
   sunLight.position.copy(sunScene); sunLight.decay=0.0001; sunLight.distance=6000*AU/d;
@@ -3965,7 +3974,7 @@ function frame(now){
   place(galaxy, GC, LY, d);
   { const pa=pdots.geometry.attributes.position.array, la=pdots.geometry.attributes.lum.array;
     DOT_BODIES.forEach((b,i) => { const P=bodyPos(b.k); pa[i*3]=P.x/LY; pa[i*3+1]=P.y/LY; pa[i*3+2]=P.z/LY;
-      const rs=Math.max(P.length()/AU, 0.3), dist=Math.max(camWorld.distanceTo(P),1), px=b.R*sizeK()/dist*pixPerRad;
+      const rs=Math.max(P.length()/AU, 0.3), dist=Math.max(camWorld.distanceTo(P),1), px=b.R*(b.k==='sun' ? sunSizeK() : sizeK())/dist*pixPerRad;
       la[i] = SHOW.trueScale ? 0 : 1.7e-14*b.R/rs * (1-smooth(2.5,5,px)); });
     pdots.geometry.attributes.position.needsUpdate=true; pdots.geometry.attributes.lum.needsUpdate=true; }
 
