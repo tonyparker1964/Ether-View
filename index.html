@@ -423,7 +423,7 @@ body{background:var(--void);color:var(--ink);font-family:var(--f-ui);overflow:hi
   <div id="alignToast" hidden role="status"></div>
   <div id="storyToast" hidden role="status"></div>
   <div id="skyPrompt" hidden><span id="skyPromptText"></span><button type="button" class="btn text" id="skyInto">Zoom in &#9656;</button></div>
-  <div id="scaleBar" aria-live="off"><div class="sbcol"><div class="sbrow"><span class="sbline" id="sbLine"></span><span id="sbText">1 AU</span></div><span class="sbearth" id="sbEarth"></span></div><label class="sbsize" title="Enlarge every planet by the same factor, so their sizes stay true to each other"><span>Planet size <b id="psOut">1×</b></span><input type="range" id="planetScale" min="0" max="3.7" step="0.01" value="0" aria-label="Planet size"></label><button type="button" class="btn text" id="trueBtn" aria-pressed="false" title="Show every body at its true size: no glows or enlarged dots">True scale</button></div>
+  <div id="scaleBar" aria-live="off"><div class="sbcol"><div class="sbrow"><span class="sbline" id="sbLine"></span><span id="sbText">1 AU</span></div><span class="sbearth" id="sbEarth"></span></div><label class="sbsize" title="Enlarge every planet by the same factor, so their sizes stay true to each other"><span>Planet size <b id="psOut">1×</b></span><input type="range" id="planetScale" min="0" max="4.3" step="0.01" value="0" aria-label="Planet size"></label><button type="button" class="btn text" id="trueBtn" aria-pressed="false" title="Show every body at its true size: no glows or enlarged dots">True scale</button></div>
   <section class="find panel" id="findPanel" aria-label="Search" data-drag>
     <span class="grip" aria-hidden="true" title="Drag to move"></span>
     <div class="search">
@@ -2403,7 +2403,7 @@ const SIGN_INFO = {
 
 // labels setup
 PLANETS.forEach(p => addLabel(p.name,'body', () => eph.p[p.k], p.k==='pluto' ? [[10.8,15.2]] : p.R>2e7 ? [[-9,8.7],[10,15.2]] : [[-9,8.7],[9.5,13.4]], { occlude:true, sizeR:p.R, key:p.k }));
-addLabel('Earth','body', () => eph.earth, [[-9,11.8]], { occlude:true, sizeR:R_EARTH, self:'earth', key:'earth' });
+addLabel('Earth','body', () => eph.earth, [[-9,13.4]], { occlude:true, sizeR:R_EARTH, self:'earth', key:'earth' });
 addLabel('Moon','body', () => eph.moon, [[7.7,11.6]], { occlude:true, sizeR:R_MOON, self:'moon', key:'moon' });
 addLabel('Sun','body', () => eph.sun, [[-9,8.7],[9.5,19.3]], { occlude:true, sizeR:R_SUN, self:'sun', key:'sun' });
 addLabel('Sun · you are here','here', () => eph.sun, [[19.3,22]], {});
@@ -3422,7 +3422,7 @@ function spinFrame(pole, angle, out){
 const rangeAlpha = (ranges, z) => { let a=0; for (const [lo,hi] of ranges) a=Math.max(a, smooth(lo-0.25,lo+0.2,z)*(1-smooth(hi-0.2,hi+0.25,z))); return a; };
 const occluders = [{ c:()=>eph.moon, r:R_MOON, k:'moon' },{ c:()=>eph.earth, r:R_EARTH, k:'earth' },{ c:()=>eph.sun, r:R_SUN, k:'sun' }];
 EXO.forEach(sys=>sys.stars.filter(st=>st.key).forEach(st=>occluders.push({c:()=>st.P,r:st.Rm,k:'x:'+st.key,near:st.Rm*1000})));
-function sizeK(R, P, max){ const S=Math.min(SHOW.planetScale||1, max||Infinity); if (S<=1) return 1; return Math.max(1, Math.min(S, camWorld.distanceTo(P)/(R*28))); }
+function sizeK(R, P, max){ const S=Math.min(SHOW.planetScale||1, max||Infinity); if (S<=1) return 1; return Math.max(1, Math.min(S, camWorld.distanceTo(P)/(R*10))); }
 function occluded(P, self){
   tmpW.copy(P).sub(camWorld); const len=tmpW.length(); tmpW.divideScalar(len);
   for (const o of occluders){ if (o.k===self) continue; const c=o.c(); if(o.near && camWorld.distanceTo(c)>o.near) continue; tmpN.copy(c).sub(camWorld); const t=tmpN.dot(tmpW); if (t<0 || t>len) continue;
@@ -3439,11 +3439,13 @@ function pickAt(cx, cy){
     const P=bodyPos(k); if (!screenOf(P)) continue;
     if (BODY[k].group==='region' || BODY[k].group==='const') continue;
     if (BODY[k].group && BODY[k].group!=='neb' && camWorld.distanceTo(P) > BODY[k].R*4e4 && !labelVisible(k)) continue;
-    const rad = BODY[k].R/Math.max(1,camWorld.distanceTo(P))*pixPerRad/DPR;
+    const grow = (!BODY[k].group || BODY[k].group===undefined) && k!=='moon' ? sizeK(BODY[k].R, P, k==='sun'?12:Infinity) : 1;
+    const rad = BODY[k].R*grow/Math.max(1,camWorld.distanceTo(P))*pixPerRad/DPR;
     if (rad<6 && occluded(P,k)) continue;
     const lim=Math.max(16, rad), dd=Math.hypot(scr.x-cx, scr.y-cy);
     if(BODY[k].sys){if(dd<lim && dd/lim<aggregateScore){aggregateScore=dd/lim;aggregate=k;}continue;}
-    if (dd<lim && dd/lim<bs){ bs=dd/lim; best=k; }
+    const sc = dd/lim + (k==='moon' || BODY[k].group==='moons' ? 0.35 : 0);   // planets win ties against their moons
+    if (dd<lim && sc<bs){ bs=sc; best=k; }
   }
   return best || aggregate;
 }
@@ -3949,7 +3951,8 @@ function frame(now){
     const raw = mpp*110, unitsArr=[[LY,'ly'],[AU,'AU'],[1e3,'km'],[1,'m']]; let best=null;
     for (const [u,n] of unitsArr){ const v=raw/u; if (v>=1 || u===1){ const p10=Math.pow(10,Math.floor(Math.log10(v))), m=v/p10, nice=(m>=5?5:m>=2?2:1)*p10; best=[nice*u, (nice>=1e4?nice.toLocaleString():+nice.toPrecision(3))+' '+n]; break; } }
     if (best){ sbLine.style.width=(best[0]/mpp).toFixed(1)+'px'; sbText.textContent=best[1]; }
-    const ep = 2*R_EARTH*Math.max(1, Math.min(SHOW.planetScale||1, camWorld.distanceTo(F)/(R_EARTH*28)))/mpp;   // an Earth placed at the point in focus sbEarth.textContent = 'Earth here: '+(ep>=10 ? Math.round(ep)+' px' : ep>=0.01 ? ep.toPrecision(2)+' px' : ep>=1e-6 ? (1/ep>=1e6 ? '1/'+(Math.round(1/ep)).toExponential(1).replace('e+',' × 10^')+' px' : '1/'+Math.round(1/ep).toLocaleString()+' of a pixel') : 'far below a pixel');
+    const ep = 2*R_EARTH*Math.max(1, Math.min(SHOW.planetScale||1, camWorld.distanceTo(F)/(R_EARTH*10)))/mpp;   // an Earth placed at the point in focus
+    sbEarth.textContent = 'Earth here: '+(ep>=10 ? Math.round(ep)+' px' : ep>=0.01 ? ep.toPrecision(2)+' px' : ep>=1e-6 ? (1/ep>=1e6 ? '1/'+(Math.round(1/ep)).toExponential(1).replace('e+',' × 10^')+' px' : '1/'+Math.round(1/ep).toLocaleString()+' of a pixel') : 'far below a pixel');
   }
   if (hudT > 0.1){ hudT=0; updateHUD(); }
   if (skyT > 0.35){ skyT=0; updateSkyPanel(); }
