@@ -121,6 +121,7 @@ body{background:var(--void);color:var(--ink);font-family:var(--f-ui);overflow:hi
 .info .kind{margin:0 0 6px;font:500 calc(10px*var(--fs))/1.2 var(--f-ui);letter-spacing:.18em;text-transform:uppercase;color:var(--sun)}
 .info h2{margin:0;font:400 calc(30px*var(--fs))/1 var(--f-display)}
 .infozoom{display:flex;gap:6px;margin:10px 0 4px}.infozoom .btn{flex:1;display:inline-flex;align-items:center;justify-content:center;gap:6px;font-size:calc(12px*var(--fs));padding:7px 8px}.infozoom svg{width:10px;height:10px;fill:currentColor}
+.alchemytool{color:#ffd27a;border-color:rgba(255,210,122,.45)}
 .alchemybtn{width:100%;margin:0 0 4px;height:34px;color:#ffe9c4;border-color:rgba(255,210,122,.45);background:linear-gradient(90deg,rgba(255,154,92,.14),rgba(111,182,255,.08),rgba(185,212,138,.1));letter-spacing:.06em;white-space:nowrap;font-size:calc(10.5px*var(--fs))}
 .info.alchemy{width:min(calc(25rem*var(--fs)),100%)}
 .al-now{margin:10px 0 0;height:30px;font-size:calc(11px*var(--fs))}
@@ -484,6 +485,7 @@ body{background:var(--void);color:var(--ink);font-family:var(--f-ui);overflow:hi
       <form id="chatForm" class="chatform"><input id="chatIn" type="text" autocomplete="off" placeholder="Ask Ether…" aria-label="Your question"><button class="btn" id="chatSend" type="submit">Ask</button><button class="btn" id="chatStop" type="button" hidden>Stop</button></form>
       <p class="lnote" id="chatNote"></p>
     </div>
+    <button class="btn alchemytool" id="alchemyTool" type="button" aria-label="Today’s Planetary Alchemy" title="Today’s Planetary Alchemy"><svg viewBox="0 0 12 12" aria-hidden="true"><path fill-rule="evenodd" d="M6 .5a5.5 5.5 0 1 1 0 11 5.5 5.5 0 0 1 0-11zm0 1.2a4.3 4.3 0 1 0 0 8.6 4.3 4.3 0 0 0 0-8.6zM6 2.9l3 5.3H3z"/></svg></button>
     <button class="btn" id="musicBtn" type="button" aria-label="Music" aria-expanded="false" aria-controls="musicPanel"><svg viewBox="0 0 12 12"><path d="M4 1.6 10.5.5v7.6a1.9 1.6 0 1 1-1.2-1.5V3L5.2 3.7v5.6A1.9 1.6 0 1 1 4 7.8z"/></svg></button>
     <button class="btn" id="layersBtn" type="button" aria-label="Layers and names" aria-expanded="false" aria-controls="layers"><svg viewBox="0 0 12 12"><path d="M6 .8 11.5 3.6 6 6.4.5 3.6zM1.6 5.6 6 7.8l4.4-2.2 1.1.6L6 9 .5 6.2zM1.6 8.2 6 10.4l4.4-2.2 1.1.6L6 11.6.5 8.8z"/></svg></button>
     <div id="layers" class="layers" hidden role="dialog" aria-label="Layers and names">
@@ -3367,15 +3369,17 @@ function renderAlchemy(force){
   if (open.length) infoEl.querySelectorAll('details.al-pl').forEach((d,i)=>{ d.open=!!open[i]; });
   makePanelCollapsible(infoEl,'Planetary Alchemy',true);
   document.getElementById('infoClose').addEventListener('click', closeInfo);
-  document.getElementById('alNow')?.addEventListener('click', () => { simTime=Date.now(); setDir(1); updateEphemeris(simTime); updateSkyPanel(); refreshDateUI(); });
+  document.getElementById('alNow')?.addEventListener('click', () => { simTime=Date.now(); setDir(0); updateEphemeris(simTime); updateSkyPanel(); refreshDateUI(); });
   infoEl.scrollTop=sc;
 }
 function openAlchemy(){
-  closeInfo(); alchemyOn=true; alchemyKey='';
+  closeInfo(); simTime=Date.now(); setDir(0); updateEphemeris(simTime); updateSkyPanel(); refreshDateUI();   // a daily reading opens on today, with the clock held still
+  alchemyOn=true; alchemyKey='';
   infoEl.hidden=false; hudEl.classList.add('info-open'); renderAlchemy(true); applyPanel(infoEl);
   infoEl.scrollTop=0; document.getElementById('infoClose')?.focus();
 }
 document.getElementById('alchemyBtn').addEventListener('click', openAlchemy);
+document.getElementById('alchemyTool').addEventListener('click', () => { if (alchemyOn) closeInfo(); else openAlchemy(); });
 
 // ---------- search ----------
 const qEl=document.getElementById('q'), resultsEl=document.getElementById('results');
