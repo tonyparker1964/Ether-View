@@ -121,6 +121,39 @@ body{background:var(--void);color:var(--ink);font-family:var(--f-ui);overflow:hi
 .info .kind{margin:0 0 6px;font:500 calc(10px*var(--fs))/1.2 var(--f-ui);letter-spacing:.18em;text-transform:uppercase;color:var(--sun)}
 .info h2{margin:0;font:400 calc(30px*var(--fs))/1 var(--f-display)}
 .infozoom{display:flex;gap:6px;margin:10px 0 4px}.infozoom .btn{flex:1;display:inline-flex;align-items:center;justify-content:center;gap:6px;font-size:calc(12px*var(--fs));padding:7px 8px}.infozoom svg{width:10px;height:10px;fill:currentColor}
+.alchemybtn{width:100%;margin:0 0 4px;height:34px;color:#ffe9c4;border-color:rgba(255,210,122,.45);background:linear-gradient(90deg,rgba(255,154,92,.14),rgba(111,182,255,.08),rgba(185,212,138,.1));letter-spacing:.06em;white-space:nowrap;font-size:calc(10.5px*var(--fs))}
+.info.alchemy{width:min(calc(25rem*var(--fs)),100%)}
+.al-now{margin:10px 0 0;height:30px;font-size:calc(11px*var(--fs))}
+.al-hero{margin:12px 0 0;padding:12px 13px;border:1px solid color-mix(in srgb,var(--al) 45%,transparent);border-radius:8px;background:linear-gradient(160deg,color-mix(in srgb,var(--al) 14%,transparent),rgba(255,255,255,.02))}
+.al-hero p{margin:8px 0 0;font-size:calc(12.5px*var(--fs));line-height:1.5;color:#d3d7e4}
+.al-hero .al-op{margin:0;font:400 calc(26px*var(--fs))/1 var(--f-display);color:var(--al)}
+.al-sub{margin:4px 0 0;font:500 calc(10px*var(--fs))/1.3 var(--f-ui);letter-spacing:.16em;text-transform:uppercase;color:var(--ink-dim)}
+.al-hero .al-sub{margin-top:5px}
+.al-bar{display:grid;grid-template-columns:3.6em 1fr 2.6em;align-items:center;gap:8px;margin-top:6px;font-size:calc(11px*var(--fs));color:var(--ink-dim)}
+.al-bar i{display:block;height:6px;border-radius:3px;background:rgba(255,255,255,.07);overflow:hidden}
+.al-bar b{display:block;height:100%;border-radius:3px}
+.al-bar em{font-style:normal;text-align:right;font-family:var(--f-mono)}
+.al-hero .al-mode{font-style:italic;color:#efe6d2}
+.al-tone{margin-top:8px}
+.al-list{list-style:none;margin:0;padding:0}
+.al-list li{padding:8px 0;border-bottom:1px solid var(--line)} .al-list li:last-child{border-bottom:0}
+.al-list p{margin:0;font-size:calc(12.5px*var(--fs));line-height:1.5;color:#d3d7e4}
+.al-list .al-asp{display:flex;justify-content:space-between;gap:10px;margin-bottom:3px;color:var(--ink)}
+.al-list .al-asp b{font-weight:500} .al-list .al-asp span{flex:none;font-size:calc(10.5px*var(--fs));letter-spacing:.06em;color:var(--sun)}
+.al-pl{margin:6px 0 0;border:1px solid rgba(230,194,124,.2);border-radius:8px;background:rgba(230,194,124,.03)}
+.al-pl summary{display:flex;align-items:center;gap:8px;padding:8px 10px;cursor:pointer;font-size:calc(13px*var(--fs));color:#d3d7e4;list-style:none}
+.al-pl summary::-webkit-details-marker{display:none}
+.al-pl summary b{font-weight:500;color:var(--ink)}
+.al-pl .glyph{width:1.3em;text-align:center;color:var(--sun);font:400 calc(17px*var(--fs))/1 'Segoe UI Symbol','Apple Symbols','Noto Sans Symbols',var(--f-display)}
+.al-pl .deg{margin-left:auto;font-family:var(--f-mono);font-size:calc(11px*var(--fs));color:var(--ink-dim)}
+.al-pl dl{display:grid;grid-template-columns:1fr;gap:2px;margin:0;padding:0 12px 6px;font-size:calc(12.5px*var(--fs));line-height:1.5}
+.al-pl dt{margin-top:6px;font:500 calc(9.5px*var(--fs))/1.2 var(--f-ui);letter-spacing:.16em;text-transform:uppercase;color:var(--sun)}
+.al-pl dd{margin:0;color:#d3d7e4}
+.al-visit{margin:2px 12px 10px;height:28px;font-size:calc(11px*var(--fs))}
+.al-elixir{margin:16px 0 0;padding:12px 13px;border:1px solid rgba(255,210,122,.35);border-radius:8px;background:radial-gradient(circle at 0 0,rgba(255,210,122,.16),rgba(255,210,122,.03) 70%)}
+.al-elixir p{margin:6px 0 0;font-size:calc(13px*var(--fs));line-height:1.5;color:#efe6d2}
+.al-elixir .al-sub{margin:0;color:var(--sun)}
+.al-elixir .refl{font:italic 400 calc(14px*var(--fs))/1.45 var(--f-display)}
 .homebtn{width:100%;margin:8px 0 4px;height:34px;color:#ffe2b0;border-color:rgba(230,194,124,.4);background:linear-gradient(90deg,rgba(230,194,124,.1),rgba(230,194,124,.03))}
 .stopbtn[aria-pressed="true"]{color:#ff9a8a;border-color:rgba(255,140,120,.55);background:rgba(255,120,100,.12)}
 .chatpanel{width:calc(22rem*var(--fs));display:flex;flex-direction:column}
@@ -524,6 +557,7 @@ body{background:var(--void);color:var(--ink);font-family:var(--f-ui);overflow:hi
         <span class="meta" id="zodMeta">Geocentric · sidereal</span>
       </header>
       <button class="btn text homebtn" id="homeBtn" type="button" title="Fly back to the Sun and planets and set the clock to now">&#9737; Our solar system · now</button>
+      <button class="btn text alchemybtn" id="alchemyBtn" type="button" title="A daily reading of the planets: astrological, metaphysical and soul zodiac meanings">&#10022; Today’s Planetary Alchemy</button>
       <div id="skyBody">
         <table id="posTable"></table>
         <h3>Sky report</h3>
@@ -2599,7 +2633,7 @@ window.addEventListener('keydown', e => {
   if (e.key==='Escape' && !bangEl.hidden){ if (BANG.startup) enterExplorer(); else closeBang(); return; }
   if (!bangEl.hidden){ if (e.key===' '){ e.preventDefault(); bangTogglePlay(); } return; }
   if (e.key==='Escape' && !musicPanel.hidden){ setMusicOpen(false); musicBtn.focus(); return; }
-  if (e.key==='Escape'){ if (!systemsEl.hidden){ setSystemsOpen(false); systemsBtn.focus(); return; } if (!layersEl.hidden){ setLayersOpen(false); layersBtn.focus(); return; } if (!viewer.hidden){ viewer.hidden=true; return; } if (!resultsEl.hidden) closeResults(); else if (infoKey) closeInfo(); return; }
+  if (e.key==='Escape'){ if (!systemsEl.hidden){ setSystemsOpen(false); systemsBtn.focus(); return; } if (!layersEl.hidden){ setLayersOpen(false); layersBtn.focus(); return; } if (!viewer.hidden){ viewer.hidden=true; return; } if (!resultsEl.hidden) closeResults(); else if (infoKey || alchemyOn) closeInfo(); return; }
   if (e.target.closest && e.target.closest('button,input,select,textarea,[contenteditable="true"]')) return;
   const k=e.key; let used=true;
   if (k==='+'||k==='=') nudgeZoom(-0.3);
@@ -3232,8 +3266,116 @@ function updateSkyPanel(){
   list.sort((a,b)=>a.o-b.o);
   aspectsEl.innerHTML = list.slice(0,5).map(a=>`<li class="${a.o<1.5?'tight':''}"><span>${a.t}</span><span>${a.o.toFixed(1)}°</span></li>`).join('') || '<li><span>No major aspects within orb</span></li>';
   document.getElementById('skyReport').innerHTML = skyReport();
-  updateInfoLive();
+  updateInfoLive(); renderAlchemy();
 }
+
+// ---------- Today's Planetary Alchemy: a daily reading of the planets' signs and aspects, astrological, metaphysical and soul ----------
+// Offered for reflection. Signs follow the zodiac chosen in Layers (sidereal by default). Soul rulers follow esoteric astrology.
+const SOUL = {
+  Aries:{ key:'I am the spark that begins.', lesson:'to act from inner purpose rather than impulse, and to spend courage on what brings new life', ruler:'Mercury' },
+  Taurus:{ key:'I hold the light in form.', lesson:'to turn desire into illumination and to treasure what lasts', ruler:'Vulcan, a hidden, symbolic planet' },
+  Gemini:{ key:'I join the two into one.', lesson:'to unite mind and heart, and to see the single thread running through opposites', ruler:'Venus' },
+  Cancer:{ key:'I build a home for the light.', lesson:'to nurture without clinging, and to feel at home in the whole of life', ruler:'Neptune' },
+  Leo:{ key:'My heart is a sun for others.', lesson:'to shine from the true self rather than the mask, and to let that warmth serve', ruler:'the Sun' },
+  Virgo:{ key:'I tend the seed of spirit within matter.', lesson:'to purify, to serve, and to find the sacred in ordinary work', ruler:'the Moon' },
+  Libra:{ key:'I balance and choose the way.', lesson:'to make right relationships, and harmony that still tells the truth', ruler:'Uranus' },
+  Scorpio:{ key:'I rise from the depths transformed.', lesson:'to meet the shadow and turn its poison into medicine', ruler:'Mars' },
+  Sagittarius:{ key:'I aim my arrow at the light.', lesson:'to give faith a direction and follow one clear aspiration', ruler:'Earth' },
+  Capricorn:{ key:'I climb the mountain to its summit.', lesson:'to master the material world with humility and find authority within', ruler:'Saturn' },
+  Aquarius:{ key:'I pour the waters of life for all.', lesson:'to serve the whole, and to live freedom as a form of love', ruler:'Jupiter' },
+  Pisces:{ key:'I return to the ocean of oneness.', lesson:'to soften into compassion and release the walls of the separate self', ruler:'Pluto' }
+};
+const ELEMENT_WORK = {
+  Fire:{ op:'Calcination', col:'#ff9a5c', realm:'spirit and will', text:'Fire leads the day. Like the alchemist’s first heating, it burns away what is false so the true metal can show. Expect heat, drive and quick clarity, and let pride and old grudges turn to ash.', elixir:'Light a candle and name one thing you are ready to let burn away.' },
+  Water:{ op:'Dissolution', col:'#6fb6ff', realm:'soul and feeling', text:'Water leads the day. The alchemist dissolves the hardened ash in water, and feelings now soften old forms. Let tears, dreams and empathy carry what words cannot.', elixir:'Drink a glass of water slowly and let one feeling move through you without judging it.' },
+  Air:{ op:'Separation', col:'#c9d7ff', realm:'mind and breath', text:'Air leads the day. In separation the alchemist filters the essential from the dross. Use the clear wind of thought to sort, decide, speak and release what no longer belongs.', elixir:'Take seven slow breaths, then write down the one thought that matters most.' },
+  Earth:{ op:'Coagulation', col:'#b9d48a', realm:'body and form', text:'Earth leads the day. Coagulation is the final setting of the stone, when spirit takes solid form. Give your intentions a body through steady work, care of the body, and things you can touch.', elixir:'Stand barefoot on the ground and finish one practical task you have been putting off.' },
+  Aether:{ op:'Conjunction', col:'#ffd27a', realm:'the quintessence', text:'No element rules alone today. The leading elements meet as equals, the alchemist’s conjunction or sacred marriage, where opposites join and Aether, the fifth element, can be felt between them.', elixir:'Sit in stillness for a few minutes and feel the four elements meet in your body, breath, heart and spirit.' }
+};
+const MODE_WORK = { Cardinal:'Cardinal signs are strongest, so it is a day to begin and initiate.', Fixed:'Fixed signs are strongest, so it is a day to hold steady, deepen and sustain.', Mutable:'Mutable signs are strongest, so it is a day to adapt, release and change course.' };
+const GREAT_WORK = [
+  [0.03, 'Nigredo, the blackening', 'The New Moon is the seed in darkness. The old breaks down and something unseen begins. Rest and set an intention.'],
+  [0.5,  'Albedo, the whitening', 'The waxing Moon washes and purifies. Clarity grows, so build gently toward what you planted.'],
+  [0.97, 'Citrinitas, the yellowing', 'The gibbous Moon is dawning light. Wisdom ripens and the work is nearly whole, so refine and keep faith.'],
+  [1.01, 'Rubedo, the reddening', 'The Full Moon completes the work. What was hidden is lit and spirit and matter are joined. Celebrate, and notice what is revealed.']
+];
+const WANING_WORK = ['Distillation, the return to the vessel', 'The waning Moon distills what was learned and releases the rest. Give thanks, let go, and prepare the vessel for the next cycle.'];
+const DAY_RULER = ['sun','moon','mars','mercury','jupiter','venus','saturn'];
+const RETRO_WORK = { mercury:'rethink, revise and reconnect before you push ahead', venus:'revisit what and whom you love, and what you are worth', mars:'redirect your energy inward and choose battles wisely', jupiter:'grow from the inside and question borrowed beliefs', saturn:'review your structures, duties and inner authority', uranus:'let awakening happen within before it happens around you', neptune:'let illusions dissolve so your intuition clears', pluto:'carry out deep inner transformation, quietly and at the root' };
+const ASPECT_WORK = {
+  conjunct:{ word:'fuse', op:'Conjunction', t:(A,B) => `${A.n} and ${B.n} meet as one: ${A.kw} and ${B.kw} fuse into a single force. A seed is planted.` },
+  opposite:{ word:'polarize', op:'Polarity', t:(A,B) => `${A.n} faces ${B.n} across the sky: ${A.kw} pulls against ${B.kw}. Wholeness comes from holding both, not choosing one.` },
+  trine:{ word:'flow', op:'Flow', t:(A,B) => `${A.n} and ${B.n} flow together: ${A.kw} and ${B.kw} help each other easily. A gift to use, not just enjoy.` },
+  square:{ word:'forge', op:'Friction', t:(A,B) => `${A.n} squares ${B.n}: ${A.kw} grinds against ${B.kw}. Like a hammer on hot metal, this pressure forges strength once you act on it.` }
+};
+const ALCH_W = { Sun:3, Moon:3, Mercury:2, Venus:2, Mars:2, Jupiter:1.5, Saturn:1.5, Uranus:1, Neptune:1, Pluto:1 };
+let alchemyOn = false, alchemyKey = '';
+const kwOf = k => META[k].k.split(', ')[0].toLowerCase();
+function alchemyData(){
+  const pos = SKY_BODIES.map(b => { const L=geoNow[b], sign=SIGNS[Math.floor(L/30)]; return { b, k:b.toLowerCase(), L, sign, retro:!!geoRetro[b] }; });
+  const el={ Fire:0, Earth:0, Air:0, Water:0 }, md={ Cardinal:0, Fixed:0, Mutable:0 }; let tot=0;
+  pos.forEach(p => { const w=ALCH_W[p.b], si=SIGN_INFO[p.sign]; el[si.el]+=w; md[si.mod]+=w; tot+=w; });
+  const ranked=Object.entries(el).sort((a,b)=>b[1]-a[1]), lead = ranked[0][1]-ranked[1][1] < 0.08*tot ? 'Aether' : ranked[0][0];
+  const mode=Object.entries(md).sort((a,b)=>b[1]-a[1])[0][0];
+  const mi=skyInfo('moon'), illum=(1-Math.cos(mi.el*DEG))/2;
+  const stage = (mi.east || illum>0.97 || illum<0.03) ? GREAT_WORK.find(g => illum<g[0]) : [0, ...WANING_WORK];
+  const phase = illum<.03?'New Moon':illum>.97?'Full Moon':illum<.47?(mi.east?'Waxing crescent':'Waning crescent'):illum<.53?(mi.east?'First quarter':'Last quarter'):(mi.east?'Waxing gibbous':'Waning gibbous');
+  const asp=[];
+  for (let i=0;i<pos.length;i++) for (let j=i+1;j<pos.length;j++){ let sep=Math.abs(pos[i].L-pos[j].L); if (sep>180) sep=360-sep;
+    for (const [ang,name,orb] of ASPECTS){ const o=Math.abs(sep-ang); if (o<=orb) asp.push({ a:pos[i], b:pos[j], name, o }); } }
+  asp.sort((x,y)=>x.o-y.o);
+  const d=new Date(simTime), ruler=DAY_RULER[d.getDay()];
+  return { pos, el, md, tot, lead, ranked, mode, stage, phase, illum, asp, ruler, d };
+}
+function alchemyHTML(){
+  const A=alchemyData(), W=ELEMENT_WORK[A.lead], today=new Date(simTime).toDateString()===new Date().toDateString();
+  const dstr=A.d.toLocaleDateString(undefined,{ weekday:'long', year:'numeric', month:'long', day:'numeric' });
+  const bars=['Fire','Earth','Air','Water'].map(e => { const pc=Math.round(A.el[e]/A.tot*100); return `<div class="al-bar"><span>${e}</span><i><b style="width:${pc}%;background:${ELEMENT_WORK[e].col}"></b></i><em>${pc}%</em></div>`; }).join('');
+  const R=META[A.ruler], rp=A.pos.find(p=>p.k===A.ruler), rc=R.ch && CHAKRA[R.ch], on=toneNow && toneNow.key===R.ch;
+  const sun=A.pos[0], moon=A.pos[1];
+  const planet = p => { const M=META[p.k], si=SIGN_INFO[p.sign], S=SOUL[p.sign], c=M.ch && CHAKRA[M.ch];
+    return `<details class="al-pl"${p.k==='sun'?' open':''}><summary><span class="glyph">${M.g}︎</span><b>${p.b}</b> in ${p.sign} <span class="deg">${fmtDeg(p.L)}</span>${p.retro?'<span class="retro">RETRO</span>':''}</summary>
+      <dl><dt>Astrological</dt><dd>${M.a}: ${M.k.toLowerCase()}, expressed through ${p.sign}’s ${si.kw} nature${p.retro?`. Retrograde: a time to ${RETRO_WORK[p.k]}`:''}.</dd>
+      <dt>Metaphysical</dt><dd>${si.el} in its ${si.mod.toLowerCase()} form, the realm of ${ELEMENT_WORK[si.el].realm}${c?`; it works through the ${c[0].toLowerCase()} chakra (${c[1]} Hz)`:`; the higher octave of ${M.oct}`}${M.metal?` and the metal ${M.metal.toLowerCase()}`:''}.</dd>
+      <dt>Soul zodiac</dt><dd><i>“${S.key}”</i> ${p.b}’s soul lesson here is ${S.lesson}. Soul ruler of ${p.sign}: ${S.ruler}.</dd></dl>
+      <button type="button" class="btn text al-visit" data-visit-body="${p.k}">Visit ${p.b}</button></details>`; };
+  const asp = A.asp.slice(0,5).map(x => { const W2=ASPECT_WORK[x.name], P={ n:x.a.b, kw:kwOf(x.a.k) }, Q={ n:x.b.b, kw:kwOf(x.b.k) };
+    return `<li><p class="al-asp"><b>${x.a.b} ${x.name} ${x.b.b}</b><span>${W2.op} · ${x.o.toFixed(1)}°</span></p><p>${W2.t(P,Q)}</p></li>`; }).join('') || '<li><p>No major aspects within orb today. Each planet works on its own.</p></li>';
+  const retros = A.pos.filter(p=>p.retro);
+  return `<div class="top" data-drag><span class="grip" aria-hidden="true" title="Drag to move" style="margin-top:4px"></span><div style="flex:1;min-width:0"><p class="kind">${dstr}</p><h2>${today?'Today’s Planetary Alchemy':'Planetary Alchemy'}</h2></div>
+    <button class="closebtn" type="button" id="infoClose" aria-label="Close Planetary Alchemy"><svg viewBox="0 0 12 12" aria-hidden="true"><path d="M2 2l8 8M10 2l-8 8"/></svg></button></div>
+    ${today?'':'<button type="button" class="btn text al-now" id="alNow">Show today instead</button>'}
+    <div class="al-hero" style="--al:${W.col}"><p class="al-op">${W.op}</p><p class="al-sub">The day’s alchemical operation · ${A.lead==='Aether'?`${A.ranked[0][0]} and ${A.ranked[1][0]} in balance`:`${A.lead} leads`}</p>
+      <p>${W.text}</p>${bars}<p class="al-mode">${MODE_WORK[A.mode]}</p></div>
+    <h3>The Great Work · ${A.phase}</h3><p class="body"><b>${A.stage[1]}.</b> ${A.stage[2]}</p>
+    <h3>Ruler of the day</h3><p class="body"><b>${A.d.toLocaleDateString(undefined,{weekday:'long'})} belongs to ${BODY[A.ruler].name}, ${R.a}</b>${R.metal?` · ${R.metal}`:''}${rc?` · ${rc[0]} chakra`:''}. ${BODY[A.ruler].name} is in ${rp.sign} today, coloring the whole day with ${SIGN_WORD[rp.sign]}. <i>${R.r}</i></p>
+    ${rc?`<button type="button" class="btn toneBtn al-tone" data-tone="${R.ch}" aria-pressed="${on}">${on?'Stop the tone':`Play the ${rc[0].toLowerCase()} tone · ${rc[1]} Hz`}</button>`:''}
+    <h3>Soul and tide</h3><p class="body"><b>Sun in ${sun.sign}:</b> the soul’s season. ${SOUL[sun.sign].key} The light of the day asks you ${SOUL[sun.sign].lesson}.</p>
+    <p class="body"><b>Moon in ${moon.sign}:</b> the emotional tide, ${SIGN_INFO[moon.sign].kw}. Feelings move toward ${SIGN_WORD[moon.sign]}; the heart’s lesson is ${SOUL[moon.sign].lesson}.</p>
+    <h3>Alignments in the vessel</h3><ul class="al-list">${asp}</ul>
+    ${retros.length?`<h3>Turning inward · retrograde</h3><ul class="al-list">${retros.map(p=>`<li><p><b>${p.b}</b> in ${p.sign}: ${RETRO_WORK[p.k]}.</p></li>`).join('')}</ul>`:''}
+    <h3>The planets today</h3>${A.pos.map(planet).join('')}
+    <div class="al-elixir"><p class="al-sub">Today’s elixir</p><p>${W.elixir}</p><p class="refl">${META[A.ruler].r} ${META.moon.r}</p></div>
+    <p class="fine">${ZOD_NAME()}, geocentric. Esoteric (soul) rulers follow the esoteric astrology tradition. Astrological, alchemical and metaphysical meanings are offered for reflection, not prediction.</p>`;
+}
+function renderAlchemy(force){
+  if (!alchemyOn || !geoNow) return;
+  const key = new Date(simTime).toDateString()+'|'+SKY_BODIES.map(b=>SIGNS[Math.floor(geoNow[b]/30)]+(geoRetro[b]?'R':'')).join(',')+'|'+sidereal()+'|'+(toneNow?toneNow.key:'');
+  if (!force && key===alchemyKey) return; alchemyKey=key;
+  const sc=infoEl.scrollTop, open=[...infoEl.querySelectorAll('details.al-pl')].map(d=>d.open);
+  infoEl.innerHTML = alchemyHTML(); infoEl.classList.add('alchemy');
+  if (open.length) infoEl.querySelectorAll('details.al-pl').forEach((d,i)=>{ d.open=!!open[i]; });
+  makePanelCollapsible(infoEl,'Planetary Alchemy',true);
+  document.getElementById('infoClose').addEventListener('click', closeInfo);
+  document.getElementById('alNow')?.addEventListener('click', () => { simTime=Date.now(); setDir(1); updateEphemeris(simTime); updateSkyPanel(); refreshDateUI(); });
+  infoEl.scrollTop=sc;
+}
+function openAlchemy(){
+  closeInfo(); alchemyOn=true; alchemyKey='';
+  infoEl.hidden=false; hudEl.classList.add('info-open'); renderAlchemy(true); applyPanel(infoEl);
+  infoEl.scrollTop=0; document.getElementById('infoClose')?.focus();
+}
+document.getElementById('alchemyBtn').addEventListener('click', openAlchemy);
 
 // ---------- search ----------
 const qEl=document.getElementById('q'), resultsEl=document.getElementById('results');
@@ -3241,6 +3383,7 @@ const SEARCH = [
   { kind:'place', grp:'gal', stop:STOPS.find(s => s.label==='Milky Way'), name:'Milky Way', tag:'Galaxy · our home', hay:'milky way galaxy home spiral barred' },
   ...['sol','moons','comet','ast','region','clu','neb','const','bh','exo','gal','craft'].flatMap(g => BODY_ORDER.filter(k => (BODY[k].group||'sol')===g).map(k => ({ kind:'body', grp:g, key:k, name:BODY[k].name,
       tag: BODY[k].tag || (k==='sun'?'Star':k==='moon'?'Moon':k==='pluto'?'Dwarf planet':'Planet'), hay:(BODY[k].name+' '+(BODY[k].alias||'')).toLowerCase() }))),
+  { kind:'alchemy', grp:'place', name:'Today’s Planetary Alchemy', tag:'Daily reading', hay:'today’s todays planetary alchemy daily alignment reading horoscope astrology metaphysical soul zodiac meaning planets today' },
   { kind:'bang', grp:'place', name:'The Big Bang', tag:'Simulation', hay:'big bang beginning origin universe start creation explosion inflation cosmic microwave background' },
   ...STOPS.map(s => ({ kind:'place', grp:'place', stop:s, name:s.label, tag:'Place', hay:(s.label+' '+(s.alias||'')).toLowerCase() }))
 ];
@@ -3251,7 +3394,7 @@ function catOf(it){
   if (it.kind!=='body') return 'places';
   const b=BODY[it.key];
   switch (it.grp){
-    case 'sol': return it.key==='sun' ? 'suns' : it.key==='moon' ? 'moons' : it.tag==='Dwarf planet' ? 'dwarfs' : 'planets';
+    case 'sol': return it.key==='sun' ? 'suns' : it.key==='moon' ? 'moons' : it.tag.startsWith('Dwarf planet') ? 'dwarfs' : 'planets';
     case 'moons': return 'moons'; case 'comet': return 'comets'; case 'ast': return 'asteroids'; case 'region': return 'belts';
     case 'neb': return 'neb'; case 'clu': return 'clusters'; case 'const': return 'const'; case 'bh': return 'bh'; case 'craft': return 'craft';
     case 'exo': return (b.sys || it.tag==='Star') ? 'suns' : 'exo';
@@ -3276,7 +3419,7 @@ function renderResults(){
 function closeResults(){ resultsEl.hidden=true; qEl.setAttribute('aria-expanded','false'); active=-1; }
 function choose(it){
   if (!it) return;
-  if (it.kind==='bang') openBang(); else if (it.kind==='body') selectBody(it.key); else { closeInfo(); flyTo(it.stop); }
+  if (it.kind==='alchemy') openAlchemy(); else if (it.kind==='bang') openBang(); else if (it.kind==='body') selectBody(it.key); else { closeInfo(); flyTo(it.stop); }
   qEl.value=''; catSel='all'; closeResults(); qEl.blur();
 }
 qEl.addEventListener('focus', () => { active=-1; renderResults(); });
@@ -3306,7 +3449,7 @@ function keplerBodyLinks(key){
   return `<nav class="body-visits" aria-label="Kepler-16 objects"><p>A and B are the two stars; lowercase b is the planet.</p>${bodies.map(k=>`<button class="btn" type="button" data-visit-body="${k}" aria-label="Visit ${bodyDisplayName(k,BODY[k].name)}">${bodyDisplayName(k,BODY[k].name)}</button>`).join('')}</nav>`;
 }
 function openInfo(k){
-  infoKey=k; infoZ=''; const b=BODY[k], art=(window.PLANET_IMG && window.PLANET_IMG[k]) ? null : BODY_ART[k], photo=NEB_PHOTO[k.slice(2)], img=(window.PLANET_IMG && window.PLANET_IMG[k]) || (photo && {portrait:photo.file}) || art;
+  alchemyOn=false; infoEl.classList.remove('alchemy'); infoKey=k; infoZ=''; const b=BODY[k], art=(window.PLANET_IMG && window.PLANET_IMG[k]) ? null : BODY_ART[k], photo=NEB_PHOTO[k.slice(2)], img=(window.PLANET_IMG && window.PLANET_IMG[k]) || (photo && {portrait:photo.file}) || art;
   infoEl.innerHTML = `<div class="top" data-drag><span class="grip" aria-hidden="true" title="Drag to move" style="margin-top:4px"></span><div style="flex:1;min-width:0"><p class="kind">${b.type}</p><h2>${b.name}</h2></div>
     <button class="closebtn" type="button" id="infoClose" aria-label="Close details"><svg viewBox="0 0 12 12" aria-hidden="true"><path d="M2 2l8 8M10 2l-8 8"/></svg></button></div>
     ${keplerBodyLinks(k)}
@@ -3353,7 +3496,7 @@ infoEl.addEventListener('click', e => { const z=e.target.closest('[data-iz]'); i
   zoomTarget = dz ? clamp(zoomTarget+dz, zLow(), ZMAX) : clamp(targetZoom(k), zLow(), ZMAX); });
 infoEl.addEventListener('click', e => { const visit=e.target.closest('[data-visit-body]');if(visit){selectBody(visit.dataset.visitBody);return;} const tb=e.target.closest('[data-tone]'); if (!tb) return; const key=tb.dataset.tone;
   if (toneNow && toneNow.key===key){ stopTone(); } else playTone(key); const on=!!(toneNow && toneNow.key===key); tb.setAttribute('aria-pressed',String(on)); const c=CHAKRA[key]; tb.textContent = on ? 'Stop the tone' : `Play the ${c[0].toLowerCase()} tone · ${c[1]} Hz`; });
-function closeInfo(){ stopTone(); infoKey=null; infoEl.hidden=true; hudEl.classList.remove('info-open'); }
+function closeInfo(){ stopTone(); infoKey=null; alchemyOn=false; infoEl.classList.remove('alchemy'); infoEl.hidden=true; hudEl.classList.remove('info-open'); }
 const PHASES = ['New Moon','Waxing crescent','First quarter','Waxing gibbous','Full Moon','Waning gibbous','Last quarter','Waning crescent'];
 function updateInfoLive(){
   if (!infoKey || !geoNow) return;

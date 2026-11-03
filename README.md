@@ -8,6 +8,7 @@ An interactive journey through the universe, by **Ether**. Begin at the Big Bang
 - **Living planets:** Saturn's rings orbit at their own speeds, with spokes, shadows and the north polar hexagon storm; Jupiter's bands flow around a turning Great Red Spot; Earth's clouds drift and change.
 - **Your music:** add songs from your device to the playlist; they stay in your browser.
 - **Real sky positions:** the Sun, Moon and planets for any date, with a sky report (conjunctions, oppositions, planet parades, Moon phase) and astrological aspects.
+- **Today's Planetary Alchemy:** a daily reading of the planets' signs and aspects, giving the day's alchemical operation (from the element balance), its Great Work stage (from the Moon's phase), the ruler of the day, and astrological, metaphysical and soul-zodiac meanings for each planet, ending with the day's elixir. Open it from the Sky positions panel or search "alchemy".
 - **Planet meanings:** archetypes, signs, rulerships, days, metals, chakras and Solfeggio tones, from Ether's Field.
 - **Time travel:** step or jump by seconds up to terayears, from the Big Bang to 100 trillion years ahead.
 - **Star systems:** single and double-sun systems such as TRAPPIST-1, Kepler-90, Kepler-16 ("Tatooine") and Kepler-47.
