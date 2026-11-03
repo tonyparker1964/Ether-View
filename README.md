@@ -2,6 +2,10 @@
 
 An interactive journey through the universe, by **Ether**. Begin at the Big Bang, set to Ether's song *The Big Bang · Zero Point Genesis*, then explore on your own: the planets on their real orbits, moons, dwarf planets and asteroids, other star systems (including double-sun worlds), constellations, nebulae, black holes and the Milky Way.
 
+**Open the app:** https://tonyparker1964.github.io/Ether-View/
+
+**Today's Planetary Alchemy:** https://tonyparker1964.github.io/Ether-View/#alchemy
+
 ## Features
 
 - **The Big Bang:** a particle simulation of the universe's history, from inflation through the birth of the Sun and planets to the cosmic web, timed to the song, with faint quantum strings linking galaxies and worlds.

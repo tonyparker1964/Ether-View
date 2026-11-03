@@ -4238,6 +4238,10 @@ updateSkyPanel(); updateHUD();
 hint.classList.add('gone'); hintGone=true;
 requestAnimationFrame(frame);
 openBang(true);
+// a direct link to the daily reading: …/Ether-View/#alchemy skips the intro and opens Today's Planetary Alchemy
+const wantsAlchemy = () => /^#?alchemy$/i.test(location.hash) || new URLSearchParams(location.search).has('alchemy');
+if (wantsAlchemy()){ BANG.leaving=false; enterExplorer(); setTimeout(openAlchemy, reduceMotion ? 120 : 1500); }
+window.addEventListener('hashchange', () => { if (!wantsAlchemy()) return; if (!bangEl.hidden){ BANG.leaving=false; enterExplorer(); setTimeout(openAlchemy, reduceMotion ? 120 : 1500); } else openAlchemy(); });
 }
 setTimeout(() => { try { startExplorer(); } catch (err) { document.getElementById('loading').textContent = 'The explorer could not start: ' + err.message; console.error(err); } }, 60);
 </script>
