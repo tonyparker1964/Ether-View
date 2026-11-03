@@ -27,6 +27,7 @@ then visit http://localhost:8000.
 ## Credits
 
 - Planet and Sun images and music: Ether.
+- 2026 ED138 ("The Hidden World"): scientific artist’s reconstruction by Ether, not an observed surface. Orbit from Holman et al. 2026 (Rubin Observatory discovery, announced 27 October 2026); the globe wraps the portrait with the far side mirrored.
 - Moon surface map: © 2010–2017 [Solar System Scope](https://www.solarsystemscope.com/textures/), based on NASA imagery, [CC BY 4.0](https://creativecommons.org/licenses/by/4.0/).
 - Planet positions: NASA JPL approximate Keplerian elements. Star, nebula, black-hole and exoplanet values from published catalogs.
 - 3D rendering: [three.js](https://threejs.org) (MIT), loaded from cdnjs.

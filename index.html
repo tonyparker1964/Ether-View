@@ -1158,6 +1158,7 @@ function registerBodyArt(key, mesh, shape) {
     'AI-generated artistic reconstruction · 4K 3-D render (3840 × 2160); source texture 1774 × 887';
   if(key.startsWith('x:')) art.credit+=' · surface and atmosphere are speculative';
   else if(['haumea','makemake','eris'].includes(key)) art.credit+=' · detailed geography is unknown';
+  else if(key==='ed138') art.credit='Globe wrapped from Ether’s artist’s reconstruction; far side mirrored';
   return art;
 }
 function ensureBodyMap(key){
@@ -1378,7 +1379,13 @@ const DWARFS = [
   { k:'makemake', name:'Makemake', a:45.43, e:.161, I:28.98, O:79.62, w:294.8, tp:1881, R:715e3, col:0xcda082, rot:22.8,
     type:'Dwarf planet · Kuiper Belt', facts:[['Diameter','About 1,430 km'],['Year','About 306 Earth years'],['Day (rotation)','22.8 hours'],['Moons','1']], note:'A reddish world coated in frozen methane.', theme:'creativity and care for the natural world (a newer astrological voice)' },
   { k:'eris', name:'Eris', a:67.86, e:.4362, I:44.04, O:35.95, w:151.64, tp:2257.3, R:1163e3, col:0xe1ded9, rot:378.9,
-    type:'Dwarf planet · scattered disk', facts:[['Diameter','2,326 km'],['Year','About 559 Earth years'],['Day (rotation)','15.8 days'],['Moons','1 (Dysnomia)']], note:'The most massive known dwarf planet; its discovery in 2005 led to Pluto’s reclassification.', theme:'discord, disruption and fierce truth-telling (in modern astrology)' }
+    type:'Dwarf planet · scattered disk', facts:[['Diameter','2,326 km'],['Year','About 559 Earth years'],['Day (rotation)','15.8 days'],['Moons','1 (Dysnomia)']], note:'The most massive known dwarf planet; its discovery in 2005 led to Pluto’s reclassification.', theme:'discord, disruption and fierce truth-telling (in modern astrology)' },
+  // 2026 ED138 (Holman et al. 2026, barycentric fit): a 43.091 AU, e 0.13873, i 24.434°, node 322.606°, perihelion arg 168.70°, last perihelion 18 Apr 1926
+  { k:'ed138', name:'2026 ED138', a:43.091, e:.13873, I:24.434, O:322.606, w:168.70, tp:1926.30, R:475e3, col:0xa58c86, rot:12,
+    alias:'ed138 2026ed138 the hidden world hidden world rubin dwarf planet candidate', tag:'Dwarf planet candidate',
+    type:'Dwarf planet candidate · trans-Neptunian region', facts:[['Also called','The Hidden World'],['Classification','Dwarf planet candidate'],['Region','Outer Solar System, beyond Neptune'],['Diameter','Estimated 600–1,500 km'],['Year','About 283 Earth years'],['Distance from the Sun','Ranges from 37 to 49 AU'],['Orbit','Elliptical, tilted 24° to the planets'],['Discovered','Rubin Observatory images (first seen 4 Mar 2026); found by Matthew Holman, announced 27 Oct 2026'],['Surface','Colors, atmosphere and rotation not yet measured']],
+    note:'Far beyond Neptune, this newly found world stayed hidden against the crowded star fields of the Milky Way. Scientists suspect it holds ancient ice preserved from the early Solar System. The image is a scientific artist’s reconstruction, not an observed surface.',
+    portrait:'img/dw-ed138.jpg', credit:'Scientific artist’s reconstruction by Ether, not an observed surface image' }
 ];
 function dwarfOrbit(dw, yr){ return { a:dw.a, e:dw.e, I:dw.I*DEG, O:dw.O*DEG, w:dw.w*DEG, M:((((yr-dw.tp)/Math.pow(dw.a,1.5))%1)+1)%1*Math.PI*2 }; }
 DWARFS.forEach(dw => {
@@ -2273,7 +2280,8 @@ function updateC3iStory(){ // a caption for each event while the clock is within
 AST.forEach(A => { BODY['a:'+A.k] = { name:A.name, ref:A.name, R:A.R, type:A.typ, group:'ast', P:A.P, alias:'asteroid '+A.typ+(A.k==='chiron'?' centaur':''), tag: A.k==='chiron' ? 'Centaur' : 'Asteroid',
   facts:[...A.facts, ['Orbit','a '+A.el[0]+' AU · e '+A.el[1]+' · tilt '+A.el[2]+'°']], note:A.note+(A.known ? '' : ' Its orbit’s size, shape and tilt are real; where it sits along the orbit is approximate.'),
   theme:A.theme, rules:'No traditional rulership', noSign:!A.known }; });
-DWARFS.forEach(dw => { BODY[dw.k] = { name:dw.name, ref:dw.name, R:dw.R, type:dw.type, P:dw.P, alias:'dwarf planet', tag:'Dwarf planet', facts:dw.facts, note:dw.note, theme:dw.theme, rules:'No traditional rulership' }; });
+DWARFS.forEach(dw => { BODY[dw.k] = { name:dw.name, ref:dw.name, R:dw.R, type:dw.type, P:dw.P, alias:'dwarf planet'+(dw.alias?' '+dw.alias:''), tag:dw.tag||'Dwarf planet', facts:dw.facts, note:dw.note, theme:dw.theme, rules:'No traditional rulership' };
+  if (dw.portrait) window.PLANET_IMG[dw.k] = { portrait:dw.portrait, credit:dw.credit }; });
 MOONS.forEach(m => { BODY['m:'+m[1]] = { name:m[2], ref:m[2], R:m.R, type:'Moon of '+PNAME[m[0]], group:'moons', P:m.P, parent:m[0], alias:PNAME[m[0]]+' moon', tag:'Moon',
   facts:[['Orbits',PNAME[m[0]]],['Diameter',Math.round(m[3]*2).toLocaleString('en-US')+' km'],['Orbit',Math.abs(m[5])+' days'+(m[5]<0?', backward':'')],['Distance from '+PNAME[m[0]],m[4].toLocaleString('en-US')+' km']],
   note:m[7]+' Its size, distance and period are real; its position along the orbit is illustrative.' }; });
@@ -2918,7 +2926,7 @@ const CMP_PRESETS = [
   ['Giant planets', ['jupiter','saturn','uranus','neptune','earth']],
   ['The Sun & planets', ['sun','jupiter','saturn','earth']],
   ['Biggest moons', ['m:ganymede','m:titan','m:callisto','m:io','moon','m:europa','m:triton','mercury']],
-  ['Dwarf planets', ['moon','pluto','eris','haumea','makemake','m:charon','ceres']],
+  ['Dwarf planets', ['moon','pluto','eris','haumea','makemake','ed138','m:charon','ceres']],
   ['Asteroids', ['ceres','a:vesta','a:pallas','a:hygiea','a:psyche','a:eros']],
   ['Tiny worlds', ['a:eros','m:phobos','m:deimos','a:bennu','a:itokawa','c:3i']],
   ['Stars', ['sun','star:alphacen:0','star:alphacen:1','star:kepler16:0','star:proxima:0','star:trappist:0','jupiter']],
@@ -3298,7 +3306,7 @@ function keplerBodyLinks(key){
   return `<nav class="body-visits" aria-label="Kepler-16 objects"><p>A and B are the two stars; lowercase b is the planet.</p>${bodies.map(k=>`<button class="btn" type="button" data-visit-body="${k}" aria-label="Visit ${bodyDisplayName(k,BODY[k].name)}">${bodyDisplayName(k,BODY[k].name)}</button>`).join('')}</nav>`;
 }
 function openInfo(k){
-  infoKey=k; infoZ=''; const b=BODY[k], art=BODY_ART[k], photo=NEB_PHOTO[k.slice(2)], img=(window.PLANET_IMG && window.PLANET_IMG[k]) || (photo && {portrait:photo.file}) || art;
+  infoKey=k; infoZ=''; const b=BODY[k], art=(window.PLANET_IMG && window.PLANET_IMG[k]) ? null : BODY_ART[k], photo=NEB_PHOTO[k.slice(2)], img=(window.PLANET_IMG && window.PLANET_IMG[k]) || (photo && {portrait:photo.file}) || art;
   infoEl.innerHTML = `<div class="top" data-drag><span class="grip" aria-hidden="true" title="Drag to move" style="margin-top:4px"></span><div style="flex:1;min-width:0"><p class="kind">${b.type}</p><h2>${b.name}</h2></div>
     <button class="closebtn" type="button" id="infoClose" aria-label="Close details"><svg viewBox="0 0 12 12" aria-hidden="true"><path d="M2 2l8 8M10 2l-8 8"/></svg></button></div>
     ${keplerBodyLinks(k)}
@@ -3319,7 +3327,7 @@ function openInfo(k){
   makePanelCollapsible(infoEl,'Planet details',true);
   infoEl.hidden=false; hudEl.classList.add('info-open'); applyPanel(infoEl);
   document.getElementById('infoClose').addEventListener('click', closeInfo);
-  const zi=document.getElementById('infoImg'); if (zi && !art) zi.addEventListener('click', () => openViewer(img.portrait, b.name, photo?.credit));
+  const zi=document.getElementById('infoImg'); if (zi && !art) zi.addEventListener('click', () => openViewer(img.portrait, b.name, photo?.credit || (DWARFS.some(dw => dw.k===k) ? img.credit+', upscaled to 3840 px' : undefined)));
   if(art) {
     const showArt=()=>bodyPortrait(k).then(src=>{
       if(infoKey!==k || !zi.isConnected) return;

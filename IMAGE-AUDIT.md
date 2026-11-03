@@ -8,6 +8,10 @@ New full-size portraits are rendered on demand by Three.js at **3840 × 2160**. 
 
 AI reconstructions use characteristic surface types (Io's sulfur and volcanism, Europa's cracks, Ceres' salts, Titan's amber atmosphere, Charon's red polar region). They are illustrations, not navigational maps or exact scientific reconstructions. Haumea, Makemake and Eris do not have resolved global surface maps; their detailed geography is conjectural. All exoplanet surface/cloud appearances are speculative. Gas giants and Titan show atmospheres rather than invented cratered rocky surfaces. Phobos and Deimos use irregular ellipsoidal geometry; Haumea retains its elongated shape.
 
+## 2026 ED138
+
+The dwarf planet candidate 2026 ED138 uses Ether's own scientific artist's reconstruction (`img/dw-ed138.jpg`, upscaled to 3840 × 2160) in its details panel. Its globe map (`img/body-ed138.jpg`, 2048 × 1024) is projected from that portrait with the far side mirrored. Its real surface, colors, atmosphere and rotation are unknown.
+
 ## Scientific references
 
 - [NASA: dwarf planets](https://science.nasa.gov/dwarf-planets/)

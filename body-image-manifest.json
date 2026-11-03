@@ -538,5 +538,16 @@
     "portraitHeight": 2160,
     "provenance": "AI-generated artistic reconstruction; 4K portrait rendered by Three.js",
     "gitSha": "ac7dedc72a48b825bceef55e79b00371e3b691dd"
+  },
+  {
+    "key": "ed138",
+    "file": "img/body-ed138.jpg",
+    "sha256": "f782061b61c2a66a6e09900b49a7fb011a1b1d1dbf3045759c5812a001a1b0a0",
+    "bytes": 661733,
+    "sourceWidth": 2048,
+    "sourceHeight": 1024,
+    "portraitWidth": 3840,
+    "portraitHeight": 2160,
+    "provenance": "Globe map projected from Ether's scientific artist's reconstruction (far side mirrored); details panel shows that portrait, img/dw-ed138.jpg, upscaled to 3840 \u00d7 2160"
   }
 ]

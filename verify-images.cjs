@@ -5,9 +5,9 @@ const dwarfs=array('DWARFS','function dwarfOrbit');
 const moons=array('MOONS','const PNAME');
 const exo=array('EXO','EXO.forEach');
 const keys=[...dwarfs.map(d=>d.k),...moons.map(m=>m[1]),...exo.flatMap(s=>s.planets.map(p=>p[0]))];
-assert.equal(keys.length,45);assert.equal(new Set(keys).size,45);
+assert.equal(keys.length,46);assert.equal(new Set(keys).size,46);
 const manifest=JSON.parse(fs.readFileSync(root+'/body-image-manifest.json'));
-assert.equal(manifest.length,45);
+assert.equal(manifest.length,46);
 const hashes=new Set();
 for(const key of keys){
  const a=manifest.find(m=>m.key===key);assert(a,'Missing image '+key);
@@ -21,4 +21,4 @@ assert(!html.includes('hotJupiterTex'),'Shared exoplanet map remains');
 assert(html.includes("registerBodyArt('moon',moonMesh)"));
 const portraits=h=>h.match(/<script>window.PLANET_IMG=.*?<\/script>/)[0];
 assert.equal(crypto.createHash('sha256').update(portraits(html)).digest('hex'),'f4e4969807c637c670b64e6820fb384568cb9f54fa7cf34c90f792d304961f54','Original major-planet images changed');
-console.log('PASS: all 45 replacement bodies covered; independent filenames and SHA-256 hashes; 4K output; original 10 major portraits preserved; lunar map preserved; no shared moon/exoplanet assignments.');
+console.log('PASS: all 46 replacement bodies covered; independent filenames and SHA-256 hashes; 4K output; original 10 major portraits preserved; lunar map preserved; no shared moon/exoplanet assignments.');
